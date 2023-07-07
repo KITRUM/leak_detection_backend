@@ -1,108 +1,180 @@
-# Franatech
+# About
 
-## <span style="color:#9DB7FF">About</span>
+This documents includes the information about setting up and adjusting the leak detection backend project locally.
 
-This repository is used as a main backend service for the Franatech solution.
-
-🔌 **Application is powered by:**
-
-- ✅ [Python3.11](https://www.python.org/downloads/release/python-3111/)
-- ✅ [Pipenv](https://pipenv.pypa.io)
-- ✅ [SQLite3](https://www.sqlite.org/index.html)
-- ✅ [Docker](https://docs.docker.com)
-- ✅ [Gunicorn](https://gunicorn.org)
-- ✅ [Uvicorn](https://www.uvicorn.org)
-- ✅ [FastAPI](https://fastapi.tiangolo.com)
-- ✅ [SQLAlchemy](https://www.sqlalchemy.org)
-- ✅ [Alembic](https://alembic.sqlalchemy.org)
-- ✅ [Pydantic](https://pydantic-docs.helpmanual.io)
-- ✅ [Loguru](https://loguru.readthedocs.io)
+⚠️ Before you do this it is highly recommended go to the Github Wiki page and read about the project.
+There you'll find the Git flow, database strcture, glossary and a lot more information that is updating with higher frequency that the `README.md` file 😄
 
 <br>
 
-🔌 **Code quality tools:**
+# 🔨 Setup the project locally
 
-- ✅ [ruff](https://beta.ruff.rs/docs/)
-- ✅ [black](https://github.com/psf/black)
-- ✅ [isort](https://github.com/PyCQA/isort)
-- ✅ [mypy](https://github.com/python/mypy)
-- ✅ [pytest](https://github.com/pytest-dev/pytest)
+> 💡 It includes 2 possible guides: for setting up it with docker 🐳 or without it.
 
-<br>
+## 🚧 Mandatory steps
 
-# Setup the project for development
-
-### <span style="color:#9DB7FF">1. Clone the project</span>
-
+Clone the project from GitHub
 ```bash
-git clone ...
+git clone git@github.com:KitRUM/leak_detection_backend.git
 ```
 
-### <span style="color:#9DB7FF">2. Adjust environment variables ⚙️</span>
-
-Project is configured via environment variables. You have to export them into your session from which you are running the application locally of via Docker.
-
-All default variables make it possible to run the application without any extra steps.
-
-<i>Default variables are stored in the `.env.default`</i>
-
-<b>✋ Mandatory: create the `.env` file</b>
-
-```bash
-cp .env.default .env
-```
-
-Some environment variables <b>COULD</b> have a double underscore `__`. It uses in [nested setting](https://pydantic-docs.helpmanual.io/usage/settings/) that are provided by Pydantic.
-
 <br>
 
-## 👨‍🦯 <span style="color:#9DB7FF">Setup the project 🔨</span>
+## ✖️ 🐳 Without docker
 
-1. Install the Pipenv ➕
+### 🔧 Setup the environment
+
+For running the application locally without a tool like Docker you would need to install all dependencies by yourself.
+First of all you have to install Python3.11 and SQLite3 on your machine since they are main infrastructure components.
+More information about the installation process you can find _[HERE](https://github.com/KitRUM/leak_detection_backend/wiki/The-project-is-powered-by)_
+
+Then you have to install Python dependencies that are used for running the application. For doing this we recommend using `pipenv` as a tool for managing your virtual environment and project dependencies (_but if you prefer using conda for example feel free to do this_).
 
 ```bash
+# install the pipenv tool
 pip install pipenv
-```
 
-2. Install dependencies ➕
-
-```bash
-# Activate the virtual environment
+# activate the virtual environment
 pipenv shell
 
-# Install all dependencies from the Pipfile.lock
+# install dependencies from the Pipfile.lock file
 pipenv sync --dev
 ```
 
-> ⚠️ Dependencies are locked with `--pre` option, since the `stumpy` package raises the error on installation step.
-> it will be fixed after the MVP _(Anaconda usage)_
+### 🗃️ Setup the database
 
-<br>
-
-✋ **NOTE:** if you don't use `pipenv`, remember that variables won't be exported from your `.env` file automatically.
-🔗 [Pipenv docs](https://docs.pipenv.org/advanced/#automatic-loading-of-env)
-
-3. Setup the database 🗃️
+For working with database the alembic too is used. To initiate a new database, run:
 
 ```bash
 alembic upgrade head
 ```
 
-4. Run the application ✅
+**More alembic commands**
+
+Generate a new migration file based on SQLAlchemy models
+```bash
+alembic revision --autogenerate -m "MESSAGE"
+```
+
+Upgrade database according to the last version of migrations
+```bash
+alembic upgrade head
+```
+
+Downgrade to the specific migration version
+```bash
+alembic downgrade 0e43c346b90d
+```
+
+*P.S. This hash is taken from the generated file in the migrations folder*
+
+> ⚠️ Do not forget that alembic saves the migration version into the database. Then, when you do crusial database updates you might need to remove the revision ID from the database.</i>
+
+```bash
+sqlite3 leak_detection.sqlite3
+> delete from alembic_version;
+```
+
+
+
+### 🏃‍♂️ Run the application
+
+For running the application locally you can use Uvicorn Python ASGI server. More information _[HERE](https://github.com/KitRUM/leak_detection_backend/wiki/The-project-is-powered-by)_
 
 ```bash
 uvicorn src.main:app --reload
 ```
 
+The reload parameter will reload the Uvicorn server on any change in the project root
+
 <br>
 
-## 💼 <span style="color:#9DB7FF">Additional</span>
+## 🐳 Using Docker
 
-### Tools selection reasons:
+Since developers may use different operating system the Docker system is used in order to resolve the issue: "not working on my computer".
+If more specifically, the Docker compose is used for better experience.
 
-- The PostgreSQL is used because of the array field that is mandatory for saving the data for the anomaly detection processing (_matrix profile_)
+### 🛠️ Setting up the project
+For setting up the project you just need to complete only a few steps:
 
-### Project layout
+* Install Docker [[_download page_](https://docs.docker.com/get-docker/)]
+* Run Docker containers using docker-compose:
+
+### 🏃‍♂️ Running docker containers
+
+> ⚠️ This command should be ran in the project root folder (_leak_detection_backend/_)
+
+```bash
+docker-compose up -d
+```
+
+The `-d` means `--detach` that allows you to run the container in a background
+
+**More Docker commands:**
+
+```
+# Shut down docker containers
+docker-compose down
+
+# Show logs
+docker-compose logs
+
+# Show logs in a real time
+docker-compose logs -f
+```
+
+<br>
+
+
+## 🔧 Configure the project
+
+The project could be configurable by using the environment variables.
+
+For better development experience - the pydantic Config feature is used (*described in the config.py file*). It means that you can configure any variable that is encapsulated in the `src/config.py:setting` object by setting the environment variable in the session where you run the application.
+
+Read more about [Pydantic Settings](https://docs.pydantic.dev/latest/usage/pydantic_settings/)
+
+The example:
+```
+# on Unix
+export DATABASE__NAME=leak_detection.sqlite3
+
+# on Windows
+$env:DATABASE__NAME = "leak_detection.sqlite3";
+```
+
+#### Using `.env` file
+
+Or as a preffered alternative you may use the `.env` that is automatically complete the stuff above for you if you use `pipenv` tool.
+
+It means you jsut need to complete next steps:
+```bash
+# create the .env file base on the .env.default file
+cp .env.default .env
+
+# activate the virtual environment & export all environment variables automatically ༼ つ ◕_◕ ༽つ━☆ﾟ.*･｡ﾟ
+pipenv shell
+```
+
+
+<br>
+
+
+## 🤔 Summary
+
+* So now, the project is ready to be used as a backend API.
+Just use your favorite Http requests client (_such as Postman or Advanced Rest Client_) for making queries.
+
+* The `http://localhost:8000/docs` is available in your browser for reaching the API documentation (_Swagger_)
+
+* `leak_detection_backend/http/` folder contains http requests examples
+
+
+<br>
+
+# 🏗️ Project layout
+
+We were inspired by Eric Evans's layered architecture and DDD when we were creating the project structure.
 
 For more details read about [DDD](https://en.wikipedia.org/wiki/Domain-driven_design)
 
@@ -145,113 +217,3 @@ For more details read about [DDD](https://en.wikipedia.org/wiki/Domain-driven_de
         └─ templates            # Includes Jinja2 templates for the Server-side rendering
 ```
 
-<br>
-
-### Working with migrations <i>(Alembic)</i>
-
-<b>Generate a new migration file based on SQLAlchemy models</b>
-
-```bash
-alembic revision --autogenerate -m "MESSAGE"
-```
-
-<b>Upgrade database according to the last version of migrations</b>
-
-```bash
-alembic upgrade head
-```
-
-<b>Downgrade to the specific migration version</b>
-
-```bash
-alembic downgrade 0e43c346b90d
-```
-
-<i>P.S. This hash is taken from the generated file in the migrations folder</i>
-
-<br>
-
-<i>💡 Do not forget that alembic saves the migration version into the database. Then, when you do crusial database updates you might need to remove the revision ID from the database.</i>
-
-```bash
-sqlite3 leak_detection.sqlite3
-> delete from alembic_version;
-```
-
-<br>
-
-### Glossary 📚
-
-| Name              | Description                                                                                                                                                                      |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Domain            | The group that describes the leak detector application in general                                                                                                                |
-| Sub-domain        | One from the domain's parts. The main sub-domain in the domain is **TSD**                                                                                                        |
-| Platform          | The specificplatform that installs layouts _(includes logic regarding the data source for that specific platform. Currently known platforms: Trestakk, Snorre, Troll, Askeladd)_ |
-| Template          | The template layout _(describes the logic that is related to the subsea physical layout for installing sensors)_                                                                 |
-| Sensor            | The physical sensor that is used for generating the data which can be fetched via OMNIA API                                                                                      |
-| TSD               | Time series data _(correspondes to the data that is fetched from the sensor)_                                                                                                    |
-| Anomaly detection | It takes the TSD for providing the deviation base on the **Base line** : _Ok_, _Warning_, _Critical_                                                                             |
-| Simulation        | If the anomaly detection sub-domain returns the Critical deviation - the simulation module starts working. It uses the phisical environment information for simulating the leak  |
-| Estimation        | Provides the estimation of a leakage basing on the simulation response. Basically it is a part of a whole Simulation feature since there is no sense having it separate          |
-
-<br>
-
-### Database relational structure 🗄️️
-
-```mermaid
-
-erDiagram
-
-    templates {
-        int id
-        str name
-        float angle_from_north
-        float height
-        jsonb porosity
-        jsonb wall_area
-        jsonb inclination
-        float internal_volume
-        float length
-        float width
-
-        int platform_id
-    }
-
-    sensors {
-        int id
-        str name
-        float x
-        float y
-        float z
-
-        int template_id
-    }
-
-    time_series_data {
-        int id
-        float ppmv
-        datetime timestamp
-
-        int sensor_id
-    }
-
-    anomaly_deviations {
-        int id
-
-        enum value
-        int time_series_data_id
-    }
-
-    events {
-        int id
-
-        enum type
-        str message
-        int template_id
-    }
-
- templates||--o{ sensors : ""
- templates||--o{ events : ""
- sensors||--o{ time_series_data : ""
- sensors||--o{ anomaly_deviations : ""
-```
