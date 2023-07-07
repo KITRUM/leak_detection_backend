@@ -1,0 +1,17 @@
+### Create a new template
+POST {{HTTP__BASE_URL}}/platforms/1/templates
+Content-Type: application/json
+
+{
+    "name": "My favourite template",
+    "angleFromNorth": 12.2
+}
+
+
+### Get the list of all templates
+
+GET {{HTTP__BASE_URL}}/platforms/1/templates
+
+### Retrieve the template
+
+GET {{HTTP__BASE_URL}}/templates/1

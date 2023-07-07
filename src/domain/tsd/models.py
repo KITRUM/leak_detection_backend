@@ -1,0 +1,65 @@
+from datetime import datetime
+
+import numpy as np
+from pydantic import BaseModel, validator
+
+from src.domain.sensors import SensorInDb
+from src.infrastructure.database import TimeSeriesDataTable
+from src.infrastructure.models import InternalModel, PublicModel
+
+__all__ = ("TsdRaw", "TsdUncommited", "TsdInDb", "Tsd", "TsdPublic")
+
+
+class TsdRaw(BaseModel):
+    """The raw representation of time series data.
+    This data model is used as a intermediate model by parser.
+    """
+
+    # This value should be float since it is used in Kafka which uses
+    # the pure data types
+    ppmv: float
+    timestamp: datetime
+
+
+class TsdUncommited(TsdRaw, InternalModel):
+    """This schema should be used for passing it
+    to the repository operation.
+    """
+
+    ppmv: np.float32
+    sensor_id: int
+
+    def __str__(self) -> str:
+        return f"🕑 TSD: {self.timestamp} [{self.ppmv} ppmv]"
+
+
+class TsdInDb(TsdUncommited):
+    """The internal representation of the existed Time Series Data."""
+
+    id: int
+
+    @validator("ppmv", pre=True)
+    def convert_ppmv(cls, value: float | np.float32) -> np.float32:
+        if type(value) == np.float32:
+            return value
+
+        return np.float32(value)
+
+
+class Tsd(TsdRaw, InternalModel):
+    """The internal representation of reach Time Series Data."""
+
+    id: int
+    ppmv: np.float32
+    sensor: SensorInDb
+
+    @validator("ppmv", pre=True)
+    def convert_ppmv(cls, value: float | np.float32) -> np.float32:
+        if type(value) == np.float32:
+            return value
+
+        return np.float32(value)
+
+
+class TsdPublic(TsdRaw, PublicModel):
+    id: int

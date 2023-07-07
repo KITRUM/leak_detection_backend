@@ -1,0 +1,35 @@
+"""This module takes over setting up the communication between
+application domains in order to provide the high-level feature
+called `ANOMALY DETECTION`.
+
+It depends on:
+    - the time series data that is fetched from the external source,
+    - platforms
+    - anomaly deviation calculation logic
+"""
+
+from src.application.data_lake import data_lake
+from src.domain.anomaly_detection import (
+    AnomalyDetection,
+    AnomalyDetectionUncommited,
+    services,
+)
+
+
+async def process():
+    """Consume fetched data from Kafka and detect the anomaly.
+    The result is produced back to another Kafka's topic
+    and saved to the database for making the history available.
+    """
+
+    async for tsd in data_lake.time_series_data.consume():  # type is Tsd
+        create_schema: AnomalyDetectionUncommited = services.process(tsd)
+        anomaly_detection: AnomalyDetection = (
+            await services.save_anomaly_detection(create_schema)
+        )
+
+        # Update the data lake
+        data_lake.anomaly_detections.storage.append(anomaly_detection)
+        data_lake.anomaly_detections_by_sensor[tsd.sensor.id].storage.append(
+            anomaly_detection
+        )
