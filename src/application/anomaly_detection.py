@@ -17,9 +17,9 @@ from src.domain.anomaly_detection import (
 
 
 async def process():
-    """Consume fetched data from Kafka and detect the anomaly.
-    The result is produced back to another Kafka's topic
-    and saved to the database for making the history available.
+    """Consume fetched data from data lake and detect the anomaly.
+    The result is produced back to data lake and saved
+    to the database for making the history available.
     """
 
     async for tsd in data_lake.time_series_data.consume():  # type is Tsd
