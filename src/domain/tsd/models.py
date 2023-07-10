@@ -4,7 +4,6 @@ import numpy as np
 from pydantic import BaseModel, validator
 
 from src.domain.sensors import SensorInDb
-from src.infrastructure.database import TimeSeriesDataTable
 from src.infrastructure.models import InternalModel, PublicModel
 
 __all__ = ("TsdRaw", "TsdUncommited", "TsdInDb", "Tsd", "TsdPublic")
@@ -15,8 +14,6 @@ class TsdRaw(BaseModel):
     This data model is used as a intermediate model by parser.
     """
 
-    # This value should be float since it is used in Kafka which uses
-    # the pure data types
     ppmv: float
     timestamp: datetime
 

@@ -27,10 +27,6 @@ class DatabaseSettings(BaseModel):
         return f"sqlite+aiosqlite:///./{self.name}"
 
 
-class KafkaSettings(BaseModel):
-    bootstrap_servers: str = "localhost:9092"
-
-
 # Logging Settings
 class LoggingSettings(BaseModel):
     """Configure the logging engine."""
@@ -74,7 +70,6 @@ class Settings(BaseSettings):
 
     # Infrastructure settings
     database: DatabaseSettings = DatabaseSettings()
-    kafka: KafkaSettings = KafkaSettings()
 
     # Application configuration
     public_api: PublicApiSettings = PublicApiSettings()
