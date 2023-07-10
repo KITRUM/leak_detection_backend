@@ -59,6 +59,7 @@ class DataLake:
     anomaly_detections_by_sensor: dict[
         int, LakeItem[AnomalyDetection]
     ]  # websockets consuming
+    matrix_profiles: dict[int, LakeItem[dict]]
 
 
 data_lake = DataLake(
@@ -68,4 +69,5 @@ data_lake = DataLake(
     anomaly_detections_by_sensor=defaultdict(
         partial(LakeItem[AnomalyDetection], limit=200)
     ),
+    matrix_profiles=defaultdict(partial(LakeItem[dict], limit=200)),
 )

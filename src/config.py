@@ -46,6 +46,12 @@ class LoggingSettings(BaseModel):
     compression: str = "zip"
 
 
+class AnomalyDetectionSettings(BaseModel):
+    window_size: int = 144
+    warning: int = 100
+    alert: int = 200
+
+
 class SimulationOptions(BaseModel):
     run_open_template: bool = True
     report_ppmv: bool = True
@@ -74,6 +80,8 @@ class Settings(BaseSettings):
     # Application configuration
     public_api: PublicApiSettings = PublicApiSettings()
     logging: LoggingSettings = LoggingSettings()
+
+    anomaly_detection: AnomalyDetectionSettings = AnomalyDetectionSettings()
 
     class Config(BaseConfig):
         env_nested_delimiter: str = "__"

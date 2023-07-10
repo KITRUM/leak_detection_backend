@@ -1,15 +1,32 @@
-from pydantic import BaseModel
+from enum import Enum, StrEnum, auto
 
-from src.domain.anomaly_detection.constants import AnomalyDeviation
+import numpy as np
+from pydantic import BaseModel, Field
+from stumpy.aampi import aampi
+
+from src.config import settings
 from src.domain.tsd import TsdInDb
 from src.infrastructure.models import InternalModel, PublicModel
 
 __all__ = (
+    "AnomalyDeviation",
+    "MatrixProfileLevel",
     "AnomalyDetectionUncommited",
     "AnomalyDetectionInDb",
     "AnomalyDetection",
     "AnomalyDetectionPublic",
 )
+
+
+class AnomalyDeviation(StrEnum):
+    CRITICAL = auto()
+    WARNING = auto()
+    OK = auto()
+
+
+class MatrixProfileLevel(Enum):
+    LOW = 1
+    HIGH = 1
 
 
 class _AnomalyDetectionBase(BaseModel):
@@ -48,3 +65,16 @@ class AnomalyDetectionPublic(_AnomalyDetectionBase, PublicModel):
 
     id: int
     time_series_data: TsdInDb
+
+
+class MatrixProfile(InternalModel):
+    """The Matrix profile intermediate data structure."""
+
+    max_dis: np.float32
+    counter: int = 0
+    last_values: list[np.float32] = Field(default_factory=list)
+    warning: int = settings.anomaly_detection.warning
+    alert: int = settings.anomaly_detection.alert
+    window: int = settings.anomaly_detection.window_size
+    mp_level: MatrixProfileLevel = MatrixProfileLevel.HIGH
+    baseline: aampi
