@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  app:
+    build: .
+    image: leak_detection_backend
+    container_name: leak_detection_backend
+    env_file: '.env'
+    command: bash -c "alembic upgrade head && uvicorn src.main:app"
+    ports:
+      - 8000:8000
+    volumes:
+      - .:/app/
