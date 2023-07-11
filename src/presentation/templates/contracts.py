@@ -35,6 +35,7 @@ class TemplateCreateRequestBody(PublicModel):
     name: str = Field(description="The name of the tempalte")
     angle_from_north: float
     height: float | None = None
+    z_roof: float | None = None
 
     # Semi-closed parameters
     porosity: GeometryInformationPublic | None = Field(default_factory=None)
@@ -96,6 +97,7 @@ class TemplatePublic(Template, PublicModel):
     internal_volume: float | None = None
     length: float | None = None
     width: float | None = None
+    z_roof: float | None = None
 
     # Semi-closed parameters
     porosity: GeometryInformationPublic | None = None

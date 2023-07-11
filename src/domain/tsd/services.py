@@ -1,10 +1,9 @@
 import numpy as np
 from sqlalchemy import delete
 
-from src.application.database import transaction
 from src.domain.tsd.models import Tsd, TsdInDb, TsdRaw, TsdUncommited
 from src.domain.tsd.repository import TsdRepository
-from src.infrastructure.database import TimeSeriesDataTable
+from src.infrastructure.database import TimeSeriesDataTable, transaction
 
 
 @transaction

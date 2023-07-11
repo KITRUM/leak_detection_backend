@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from loguru import logger
 
-from src.application import anomaly_detection, tsd
+from src.application import anomaly_detection, simulation, tsd
 from src.config import settings
 from src.domain.anomaly_detection import services as anomaly_detection_services
 from src.domain.tsd import services as tsd_services
@@ -39,6 +39,7 @@ shutdown_tasks = []
 if settings.debug is True:
     shutdown_tasks.append(anomaly_detection_services.delete_all)
     shutdown_tasks.append(tsd_services.delete_all)
+    # shutdown_tasks.append(simulation.delete_all)
 
 
 # Adjust the application
@@ -54,6 +55,7 @@ app: FastAPI = application.create(
     startup_tasks=[
         tsd.process_for_existed_sensors,
         anomaly_detection.process,
+        simulation.process,
     ],
     shutdown_tasks=shutdown_tasks,
 )

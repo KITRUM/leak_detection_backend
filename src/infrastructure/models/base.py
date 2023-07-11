@@ -8,13 +8,7 @@ from typing import TypeVar
 import numpy as np
 from pydantic import BaseModel, Extra
 
-__all__ = (
-    "InternalModel",
-    "_InternalModel",
-    "PublicModel",
-    "_PublicModel",
-    "FrozenModel",
-)
+__all__ = ("InternalModel", "_InternalModel", "PublicModel", "_PublicModel")
 
 
 def to_camelcase(string: str) -> str:
@@ -30,16 +24,6 @@ def to_camelcase(string: str) -> str:
 _json_encoders = {
     np.float32: lambda v: float(v) if v else None,
 }
-
-
-class FrozenModel(BaseModel):
-    class Config:
-        json_encoders = _json_encoders
-        orm_mode = True
-        use_enum_values = True
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        allow_mutation = False
 
 
 class InternalModel(BaseModel):

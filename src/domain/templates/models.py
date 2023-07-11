@@ -1,6 +1,8 @@
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 from pydantic import Field
 
 from src.infrastructure.database import TemplatesTable
@@ -28,6 +30,11 @@ class GeometryInformation(InternalModel):
             else None
         )
 
+    @property
+    @lru_cache(maxsize=1)
+    def as_array(self) -> NDArray[np.float32]:
+        return np.array([])
+
 
 class TemplateUncommited(InternalModel):
     """This schema should be used for passing it
@@ -41,6 +48,7 @@ class TemplateUncommited(InternalModel):
     name: str
     angle_from_north: np.float32
     height: np.float32 | None = None
+    z_roof: np.float32 | None = None
 
     # Semi-closed parameters
     porosity: dict | None = Field(default_factory=dict)
@@ -82,6 +90,7 @@ class Template(TemplateUncommited):
             simulated_leaks_path=Path(schema.simulated_leaks_path),
             name=schema.name,
             angle_from_north=np.float32(schema.angle_from_north),
+            z_roof=np.float32(schema.z_roof) if schema.z_roof else None,
             porosity=GeometryInformation.from_db_field(schema.porosity),
             wall_area=GeometryInformation.from_db_field(schema.wall_area),
             inclination=GeometryInformation.from_db_field(schema.inclination),

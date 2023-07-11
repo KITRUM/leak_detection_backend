@@ -1,6 +1,9 @@
 from pathlib import Path
 
+import numpy as np
 from pydantic import BaseConfig, BaseModel, BaseSettings
+
+from src.infrastructure.models import InternalModel
 
 
 # API Settings
@@ -52,19 +55,19 @@ class AnomalyDetectionSettings(BaseModel):
     alert: int = 500
 
 
-class SimulationParameters(BaseModel):
-    seawater_temperature: float = 6.2
-    depth: float = 70
-    detection_limit: float = 5.0e-7
-    current_period: float = 2
-    a: float = 5.5
-    p: float = -0.4
-    q: float = 0.34
-    cd: float = 0.001
-    alpha: float = 0.32
-    gamma: float = 1.224
-    kappa: float = 0.41
-    uref: float = 0.30
+class SimulationParameters(InternalModel):
+    seawater_temperature: np.float32 = np.float32(6.2)
+    depth: np.float32 = np.float32(70)
+    detection_limit: np.float32 = np.float32(5.0e-7)
+    current_period: np.float32 = np.float32(2)
+    a: np.float32 = np.float32(5.5)
+    p: np.float32 = np.float32(-0.4)
+    q: np.float32 = np.float32(0.34)
+    cd: np.float32 = np.float32(0.001)
+    alpha: np.float32 = np.float32(0.32)
+    gamma: np.float32 = np.float32(1.224)
+    kappa: np.float32 = np.float32(0.41)
+    uref: np.float32 = np.float32(0.30)
     tref: int = 600
 
 
