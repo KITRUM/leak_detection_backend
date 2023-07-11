@@ -6,15 +6,15 @@ from stumpy.aampi import aampi
 
 from src.config import settings
 from src.domain.tsd import TsdInDb
-from src.infrastructure.models import InternalModel, PublicModel
+from src.infrastructure.models import InternalModel
 
 __all__ = (
+    "AnomalyDetectionBase",
     "AnomalyDeviation",
     "MatrixProfileLevel",
     "AnomalyDetectionUncommited",
     "AnomalyDetectionInDb",
     "AnomalyDetection",
-    "AnomalyDetectionPublic",
 )
 
 
@@ -29,7 +29,7 @@ class MatrixProfileLevel(Enum):
     HIGH = 2
 
 
-class _AnomalyDetectionBase(BaseModel):
+class AnomalyDetectionBase(BaseModel):
     """The base representation of anomaly detection.
     Should be used only for inheritance.
     """
@@ -37,7 +37,7 @@ class _AnomalyDetectionBase(BaseModel):
     value: AnomalyDeviation
 
 
-class AnomalyDetectionUncommited(_AnomalyDetectionBase, InternalModel):
+class AnomalyDetectionUncommited(AnomalyDetectionBase, InternalModel):
     """This schema should be used for passing it
     to the repository operation.
     """
@@ -53,14 +53,7 @@ class AnomalyDetectionInDb(AnomalyDetectionUncommited):
     id: int
 
 
-class AnomalyDetection(_AnomalyDetectionBase, InternalModel):
-    """The internal representation of reach Anomaly Detection."""
-
-    id: int
-    time_series_data: TsdInDb
-
-
-class AnomalyDetectionPublic(_AnomalyDetectionBase, PublicModel):
+class AnomalyDetection(AnomalyDetectionBase, InternalModel):
     """The internal representation of reach Anomaly Detection."""
 
     id: int

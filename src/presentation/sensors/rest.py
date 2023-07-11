@@ -5,14 +5,14 @@ from fastapi import APIRouter, Request, status
 
 from src.application import tsd
 from src.application.database import transaction
-from src.domain.sensors import (
-    Sensor,
+from src.domain.sensors import Sensor, SensorsRepository, SensorUncommited
+from src.infrastructure.contracts import Response, ResponseMulti
+from src.presentation.sensors.contracts import (
     SensorCreateRequestBody,
     SensorPublic,
-    SensorsRepository,
-    SensorUncommited,
 )
-from src.infrastructure.models import Response, ResponseMulti
+
+__all__ = ("router",)
 
 router = APIRouter(prefix="", tags=["Sensors"])
 

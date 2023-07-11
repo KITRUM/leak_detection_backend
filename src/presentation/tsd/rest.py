@@ -1,12 +1,13 @@
-import json
-
 from fastapi import APIRouter, WebSocket
 from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
 from src.application.data_lake import data_lake
-from src.domain.tsd import TsdPublic, TsdRepository
-from src.infrastructure.models import Response, ResponseMulti
+from src.domain.tsd import TsdRepository
+from src.infrastructure.contracts import Response, ResponseMulti
+from src.presentation.tsd.contracts import TsdPublic
+
+__all__ = ("router",)
 
 router = APIRouter(prefix="/sensors", tags=["Time series data"])
 

@@ -5,13 +5,14 @@ from fastapi import APIRouter, Request, status
 from src.application.database import transaction
 from src.domain.templates import (
     Template,
-    TemplateCreateRequestBody,
-    TemplatePublic,
     TemplatesRepository,
     TemplateUncommited,
 )
-from src.infrastructure.models import Response
-from src.infrastructure.models.response import ResponseMulti
+from src.infrastructure.contracts import Response, ResponseMulti
+from src.presentation.templates.contracts import (
+    TemplateCreateRequestBody,
+    TemplatePublic,
+)
 
 router = APIRouter(prefix="", tags=["Templates"])
 
@@ -25,9 +26,9 @@ async def template_create(
 ) -> Response[TemplatePublic]:
     """Return the list of platforms that are provided."""
 
-    # TODO: Move by building the request here.
-    #       pydantic.validator should be used
-    create_schema = TemplateUncommited.from_request(platform_id, schema)
+    create_schema: TemplateUncommited = schema.build_template_uncommited(
+        platform_id
+    )
     template: Template = await TemplatesRepository().create(create_schema)
     template_public = TemplatePublic(**template.dict())
 
@@ -54,7 +55,7 @@ async def templates_list(
 
 @router.get("/templates/{template_id}")
 @transaction
-async def template_retrieve(request: Request, template_id: int):
+async def template_retrieve(_: Request, template_id: int):
     """Return the list of sensors within the template."""
 
     template: Template = await TemplatesRepository().get(template_id)

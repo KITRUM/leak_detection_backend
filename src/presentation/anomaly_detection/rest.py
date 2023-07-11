@@ -5,12 +5,12 @@ from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
 from src.application.data_lake import data_lake
-from src.domain.anomaly_detection import (
-    AnomalyDetectionPublic,
-    AnomalyDetectionRepository,
-)
+from src.domain.anomaly_detection import AnomalyDetectionRepository
+from src.infrastructure.contracts import Response, ResponseMulti
 from src.infrastructure.errors import NotFoundError
-from src.infrastructure.models import Response, ResponseMulti
+from src.presentation.anomaly_detection.contracts import AnomalyDetectionPublic
+
+__all__ = ("router",)
 
 router = APIRouter(prefix="/sensors", tags=["Anomaly detections"])
 
