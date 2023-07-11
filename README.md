@@ -216,4 +216,3 @@ For more details read about [DDD](https://en.wikipedia.org/wiki/Domain-driven_de
         ├─ static               # Static files for the frontend layer: CSS, JS, Images
         └─ templates            # Includes Jinja2 templates for the Server-side rendering
 ```
-

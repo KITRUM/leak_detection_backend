@@ -26,7 +26,9 @@ def trestakk_parser(raw_data: list[str]) -> TsdRaw:
     """
 
     return TsdRaw(
-        timestamp=datetime.strptime(raw_data[1], RAW_TSD_DATE_FORMAT),
+        timestamp=datetime.strptime(
+            raw_data[1], RAW_TSD_DATE_FORMAT_MILISECONDS
+        ),
         ppmv=float(raw_data[2]),
     )
 

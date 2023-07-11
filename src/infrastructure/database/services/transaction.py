@@ -4,12 +4,17 @@ from loguru import logger
 from sqlalchemy.exc import IntegrityError, PendingRollbackError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.infrastructure.database import CTX_SESSION, get_session
+from src.infrastructure.database.services.session import (
+    CTX_SESSION,
+    get_session,
+)
 from src.infrastructure.errors import DatabaseError
+
+__all__ = ("transaction",)
 
 
 def transaction(coro):
-    """This decorator should be used with all routers
+    """This decorator should be used with all coroutines
     that want's access the database for saving a new data.
     """
 

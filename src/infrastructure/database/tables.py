@@ -55,6 +55,7 @@ class TemplatesTable(Base):
     name: str = Column(String, nullable=False)  # type: ignore
     angle_from_north: float = Column(Float, nullable=False)  # type: ignore
     height: float = Column(Float, nullable=True, default=None)  # type: ignore
+    z_roof: float = Column(Float, nullable=True, default=None)  # type: ignore
 
     # Semi-closed parameters
     porosity: dict | None = Column(JSON, nullable=True, default=None)  # type: ignore
@@ -131,6 +132,23 @@ class AnomalyDetectionsTable(Base):
         uselist=False,
         back_populates="anomaly_detections",
     )
+
+
+# class SimulationResultsTable(Base):
+#     __tablename__ = "simulation_results"
+
+#     value: str = Column(String, nullable=False)  # type: ignore[var-annotated]
+
+#     time_series_data_id: int = Column(
+#         ForeignKey(TimeSeriesDataTable.id),
+#         nullable=False,
+#     )  # type: ignore[var-annotated]
+
+#     time_series_data = relationship(
+#         "TimeSeriesDataTable",
+#         uselist=False,
+#         back_populates="anomaly_detections",
+#     )
 
 
 class EventsTable(Base):

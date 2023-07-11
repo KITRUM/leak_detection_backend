@@ -2,13 +2,13 @@ from typing import AsyncGenerator
 
 from fastapi import APIRouter, Request, status
 
-from src.application.database import transaction
 from src.domain.templates import (
     Template,
     TemplatesRepository,
     TemplateUncommited,
 )
 from src.infrastructure.contracts import Response, ResponseMulti
+from src.infrastructure.database import transaction
 from src.presentation.templates.contracts import (
     TemplateCreateRequestBody,
     TemplatePublic,

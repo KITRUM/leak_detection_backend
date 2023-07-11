@@ -4,9 +4,9 @@ from typing import AsyncGenerator
 from fastapi import APIRouter, Request, status
 
 from src.application import tsd
-from src.application.database import transaction
 from src.domain.sensors import Sensor, SensorsRepository, SensorUncommited
 from src.infrastructure.contracts import Response, ResponseMulti
+from src.infrastructure.database import transaction
 from src.presentation.sensors.contracts import (
     SensorCreateRequestBody,
     SensorPublic,
