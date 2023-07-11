@@ -4,9 +4,9 @@ import numpy as np
 from pydantic import BaseModel, validator
 
 from src.domain.sensors import SensorInDb
-from src.infrastructure.models import InternalModel, PublicModel
+from src.infrastructure.models import InternalModel
 
-__all__ = ("TsdRaw", "TsdUncommited", "TsdInDb", "Tsd", "TsdPublic")
+__all__ = ("TsdRaw", "TsdUncommited", "TsdInDb", "Tsd")
 
 
 class TsdRaw(BaseModel):
@@ -56,7 +56,3 @@ class Tsd(TsdRaw, InternalModel):
             return value
 
         return np.float32(value)
-
-
-class TsdPublic(TsdRaw, PublicModel):
-    id: int

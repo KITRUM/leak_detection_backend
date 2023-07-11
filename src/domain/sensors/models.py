@@ -1,42 +1,12 @@
 import numpy as np
-from pydantic import Field, validator
+from pydantic import validator
 
 from src.domain.templates.models import Template
-from src.infrastructure.database import SensorsTable
-from src.infrastructure.models import InternalModel, PublicModel
+from src.infrastructure.models import InternalModel
 
-__all__ = (
-    "SensorCreateRequestBody",
-    "SensorUncommited",
-    "SensorInDb",
-    "SensorPublic",
-    "Sensor",
-)
+__all__ = ("SensorUncommited", "SensorInDb", "Sensor")
 
 
-# ==================================================
-# Public models
-# ==================================================
-class SensorCreateRequestBody(PublicModel):
-    """This data model corresponds to the
-    http request body for sensor creation.
-    """
-
-    name: str = Field(description="The name of the sensor")
-    x: float = Field(description="The x position of the sensor")
-    y: float = Field(description="The y position of the sensor")
-    z: float = Field(description="The z position of the sensor")
-
-
-class SensorPublic(SensorCreateRequestBody):
-    """The public sensor data model."""
-
-    id: int
-
-
-# ==================================================
-# Internal models
-# ==================================================
 class _SensorBase(InternalModel):
     """This mixin includes shared model fields for all internal models."""
 
