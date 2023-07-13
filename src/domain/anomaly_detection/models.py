@@ -26,7 +26,7 @@ class AnomalyDeviation(StrEnum):
 
 class MatrixProfileLevel(Enum):
     LOW = 1
-    HIGH = 1
+    HIGH = 2
 
 
 class _AnomalyDetectionBase(BaseModel):

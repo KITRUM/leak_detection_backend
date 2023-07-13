@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 import numpy as np
+from loguru import logger
 from sqlalchemy import delete
 from stumpy.aampi import aampi
 
@@ -63,6 +64,7 @@ def update_matrix_profile(matrix_profile: MatrixProfile, tsd: Tsd) -> None:
 
     if matrix_profile.counter >= (matrix_profile.window * 2):
         # Reset the matrix profile baseline and last values
+        matrix_profile.counter = 0
         matrix_profile.baseline = copy_initial_baseline(
             matrix_profile.mp_level
         )
@@ -82,11 +84,13 @@ def process(tsd: Tsd) -> AnomalyDetectionUncommited:
 
     if not (matrix_profile := MATRIX_PROFILES.get(tsd.sensor.id)):
         # Create default matrix profile if not exist
+        logger.success("Create the matrix profile")
         baseline = copy_initial_baseline(level=MatrixProfileLevel.HIGH)
         matrix_profile = MatrixProfile(
             max_dis=np.float32(max(baseline.P_)),
             baseline=baseline,
         )
+        MATRIX_PROFILES[tsd.sensor.id] = matrix_profile
 
     # Update the matrix profile with new Time series data
     update_matrix_profile(matrix_profile, tsd)
