@@ -48,8 +48,24 @@ class LoggingSettings(BaseModel):
 
 class AnomalyDetectionSettings(BaseModel):
     window_size: int = 144
-    warning: int = 100
-    alert: int = 200
+    warning: int = 200
+    alert: int = 500
+
+
+class SimulationParameters(BaseModel):
+    seawater_temperature: float = 6.2
+    depth: float = 70
+    detection_limit: float = 5.0e-7
+    current_period: float = 2
+    a: float = 5.5
+    p: float = -0.4
+    q: float = 0.34
+    cd: float = 0.001
+    alpha: float = 0.32
+    gamma: float = 1.224
+    kappa: float = 0.41
+    uref: float = 0.30
+    tref: int = 600
 
 
 class SimulationOptions(BaseModel):
@@ -57,6 +73,11 @@ class SimulationOptions(BaseModel):
     report_ppmv: bool = True
     current_u_v_components: bool = True
     wave_current_interaction: bool = True
+
+
+class SimulationSettings(BaseModel):
+    options: SimulationOptions = SimulationOptions()
+    parameters: SimulationParameters = SimulationParameters()
 
 
 # Settings are powered by pydantic
@@ -82,6 +103,10 @@ class Settings(BaseSettings):
     logging: LoggingSettings = LoggingSettings()
 
     anomaly_detection: AnomalyDetectionSettings = AnomalyDetectionSettings()
+    simulation: SimulationSettings = SimulationSettings()
+
+    tsd_fetch_periodicity: float = 0.05
+    data_lake_consuming_periodicity: float = 0.05
 
     class Config(BaseConfig):
         env_nested_delimiter: str = "__"
