@@ -4,7 +4,6 @@ data source with mocked CSV files.
 """
 import asyncio
 import csv
-import random
 from pathlib import Path
 from typing import AsyncGenerator
 
@@ -28,12 +27,14 @@ async def read_from_csv_file(
     with open(filename) as file:
         reader = csv.reader(file)
         next(reader)  # Skip the header row
+
         for row in reader:
             # HACK: Simulate the long request from the external source
-            await asyncio.sleep(random.randint(1, 3))
+            await asyncio.sleep(settings.tsd_fetch_periodicity)
             yield row
 
         # Simulate the case when we do not have the response
         # from the OMNIA API. Or the sensor is not available
         while True:
+            await asyncio.sleep(settings.tsd_fetch_periodicity)
             yield None

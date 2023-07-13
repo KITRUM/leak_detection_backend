@@ -32,6 +32,12 @@ async def _mock_process_time_series_data(sensor):
             continue
 
         tsd_raw: TsdRaw = parser(row)
+
+        # HACK: Some files have pick values that we'd like
+        #       to avoide for the demo
+        if tsd_raw.ppmv > 10000:
+            continue
+
         tsd: Tsd = await services.save_tsd(tsd_raw, sensor.id)
 
         # Update the data lake for background processing

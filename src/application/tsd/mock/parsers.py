@@ -9,6 +9,7 @@ __all__ = ("PlatformParserCallback", "get_parser")
 
 
 RAW_TSD_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+RAW_TSD_DATE_FORMAT_MILISECONDS = "%Y-%m-%d %H:%M:%S.%f"
 
 PlatformParserCallback = Callable[[list[str]], TsdRaw]
 
@@ -16,12 +17,12 @@ PlatformParserCallback = Callable[[list[str]], TsdRaw]
 def trestakk_parser(raw_data: list[str]) -> TsdRaw:
     """The trestakk parser mock time series data parser.
 
-    The example of mocked data (from the mock/trestakk.csv file):
-    -   -------------------     ------------------
-        Time                    Values
-    -   -------------------     ------------------
-    0   2021-04-24 19:20:00     38.75863265991211
-    1   2021-04-24 14:30:00     40.84138870239258
+    The example of mocked data (from the mock/19XT2116.csv file):
+    -   -------------------         ------------------
+        Time                        Values
+    -   -------------------         ------------------
+    0   2020-04-25 03:39:28.812     38.75863265991211
+    1   2020-04-25 03:59:28.812     40.84138870239258
     """
 
     return TsdRaw(
