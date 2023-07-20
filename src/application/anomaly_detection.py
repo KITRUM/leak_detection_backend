@@ -24,6 +24,8 @@ async def process():
 
     async for tsd in data_lake.time_series_data.consume():  # type is Tsd
         create_schema: AnomalyDetectionUncommited = services.process(tsd)
+
+        # Save a detection to the database
         anomaly_detection: AnomalyDetection = (
             await services.save_anomaly_detection(create_schema)
         )

@@ -9,3 +9,4 @@ P.S. currently, this module runs only in case of
 
 from src.domain.simulation.models import *  # noqa: F401, F403
 from src.domain.simulation.repository import *  # noqa: F401, F403
+from src.domain.simulation.types import *  # noqa: F401, F403
