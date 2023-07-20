@@ -12,7 +12,6 @@ class CartesianCoordinates(InternalModel):
     """Used for the simulation processing as
     a sensor's transformed coordinates.
     """
-
     x: np.float32
     y: np.float32
 

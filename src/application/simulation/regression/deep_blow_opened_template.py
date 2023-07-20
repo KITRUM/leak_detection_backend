@@ -3,8 +3,7 @@ import numpy as np
 from src.config import settings
 from src.domain.currents import Current
 from src.domain.sensors import Sensor
-from src.domain.simulation import CartesianCoordinates, DetectionRate, Leakage
-from src.domain.templates.models import Template
+from src.domain.simulation import CartesianCoordinates, Leakage
 from src.infrastructure.physics import constants
 
 
