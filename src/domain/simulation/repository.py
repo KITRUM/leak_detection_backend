@@ -1,4 +1,5 @@
 from sqlalchemy import Result, Select, select
+from sqlalchemy.orm import joinedload
 
 from src.domain.simulation.models import (
     SimulationDetectionRateInDb,
@@ -21,9 +22,12 @@ class SimulationDetectionRatesRepository(
     async def get(self, id_: int) -> SimulationDetectionRateInDb:
         """Fetch the sensor by id."""
 
-        query: Select = select(self.schema_class).where(
-            getattr(self.schema_class, "id") == id_
+        query: Select = (
+            select(self.schema_class)
+            .where(getattr(self.schema_class, "id") == id_)
+            .options(joinedload(self.schema_class.anomaly_detection))
         )
+
         result: Result = await self._session.execute(query)
 
         if not (schema := result.scalars().one_or_none()):

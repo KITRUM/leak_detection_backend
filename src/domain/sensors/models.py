@@ -11,20 +11,20 @@ class _SensorBase(InternalModel):
     """This mixin includes shared model fields for all internal models."""
 
     name: str
-    x: np.float32
-    y: np.float32
-    z: np.float32
+    x: np.float64
+    y: np.float64
+    z: np.float64
 
     @validator("x", "y", "z", pre=True)
-    def convert_primitive(cls, value: float | np.float32) -> np.float32:
+    def convert_primitive(cls, value: float | np.float64) -> np.float64:
         """Since the initial value could be not a numpy type
         it must be converted manually.
         """
 
-        if type(value) == np.float32:
+        if type(value) == np.float64:
             return value
 
-        return np.float32(value)
+        return np.float64(value)
 
 
 class SensorUncommited(_SensorBase):

@@ -1,6 +1,6 @@
 from typing import AsyncGenerator
 
-from sqlalchemy import Result, Select, delete, desc, select
+from sqlalchemy import Result, Select, desc, select
 from sqlalchemy.orm import joinedload
 
 from src.domain.tsd.models import Tsd, TsdInDb, TsdUncommited
@@ -52,6 +52,8 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
 
         return TsdInDb.from_orm(_schema)
 
+    # async def filter(self, attr)
+
     async def by_sensor(self, sensor_id: int) -> AsyncGenerator[TsdInDb, None]:
         """Fetch all time series data by sensor from database.
         The sensor table is joined.
@@ -60,6 +62,34 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
         query: Select = select(self.schema_class).where(
             getattr(self.schema_class, "sensor_id") == sensor_id
         )
+
+        result: Result = await self._session.execute(query)
+
+        if not (schemas := result.scalars().all()):
+            raise NotFoundError
+
+        for schema in schemas:
+            yield TsdInDb.from_orm(schema)
+
+    async def fitler_last_by_sensor(
+        self, sensor_id: int, id_: int, limit: int
+    ) -> AsyncGenerator[TsdInDb, None]:
+        """Fetch last values until the `id_` isntance in the database.
+        If the limit is not set, then the anomaly detection window size
+        setting is used.
+        Used by the estimation component.
+        """
+
+        query: Select = (
+            select(self.schema_class)
+            .where(
+                getattr(self.schema_class, "sensor_id") == sensor_id,
+                getattr(self.schema_class, "id") <= id_,
+            )
+            .order_by(desc(self.schema_class.id))
+            .limit(limit)
+        )
+
         result: Result = await self._session.execute(query)
 
         if not (schemas := result.scalars().all()):

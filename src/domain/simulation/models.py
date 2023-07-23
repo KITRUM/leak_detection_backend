@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.typing import NDArray
 
+from src.domain.anomaly_detection import AnomalyDetectionInDb
 from src.domain.sensors import Sensor
 from src.infrastructure.database.tables import SimulationDetectionRatesTable
 from src.infrastructure.models import InternalModel
@@ -8,7 +9,7 @@ from src.infrastructure.models import InternalModel
 __all__ = (
     "CartesianCoordinates",
     "Leakage",
-    "SimulationDetectionRate",
+    "Detection",
     "SimulationDetectionRateUncommited",
     "SimulationDetectionRateInDb",
 )
@@ -19,19 +20,19 @@ class CartesianCoordinates(InternalModel):
     a sensor's transformed coordinates.
     """
 
-    x: np.float32
-    y: np.float32
+    x: np.float64
+    y: np.float64
 
 
 class Leakage(InternalModel):
     """Represents the leakage in the simulation."""
 
     name: str
-    rate: np.float32  # unit: kg/s
-    x: np.float32  # unit: m
-    y: np.float32  # unit: m
-    z: np.float32  # unit: m
-    duration: np.float32  # unit: s
+    rate: np.float64  # unit: kg/s
+    x: np.float64  # unit: m
+    y: np.float64  # unit: m
+    z: np.float64  # unit: m
+    duration: np.float64  # unit: s
 
     def __str__(self) -> str:
         return f"{self.name}({self.x},{self.y},{self.z}) [{self.rate}]"
@@ -40,23 +41,27 @@ class Leakage(InternalModel):
     def from_raw(cls, payload: dict) -> "Leakage":
         return cls(
             name=payload["name"],
-            rate=np.float32(payload["rate"]),
-            x=np.float32(payload["x"]),
-            y=np.float32(payload["y"]),
-            z=np.float32(payload["z"]),
-            duration=np.float32(payload["duration"]),
+            rate=np.float64(payload["rate"]),
+            x=np.float64(payload["x"]),
+            y=np.float64(payload["y"]),
+            z=np.float64(payload["z"]),
+            duration=np.float64(payload["duration"]),
         )
 
 
-class SimulationDetectionRate(InternalModel):
+class Detection(InternalModel):
     """Represents the simulation's detection payload."""
 
     sensor: Sensor
     leakage: Leakage
-    concentrations: NDArray[np.float32]
+    concentrations: NDArray[np.float64]
 
 
 class SimulationDetectionRateUncommited(InternalModel):
+    """This model represents the payload for
+    the detection rate database creation payload.
+    """
+
     anomaly_detection_id: int
     leakage: dict
     rate: float
@@ -65,11 +70,17 @@ class SimulationDetectionRateUncommited(InternalModel):
     concentrations: str
 
 
-class SimulationDetectionRateInDb(SimulationDetectionRateUncommited):
+class SimulationDetectionRateInDb(InternalModel):
+    """This model represents the detection rate database representation.
+    It uses optimized numpy data types, leakage representation
+    and nested anomaly detection model.
+    """
+
     id: int
+    anomaly_detection: AnomalyDetectionInDb
     leakage: Leakage
-    rate: np.float32
-    concentrations: NDArray[np.float32]
+    rate: np.float64
+    concentrations: NDArray[np.float64]
 
     @classmethod
     def from_orm(
@@ -79,17 +90,19 @@ class SimulationDetectionRateInDb(SimulationDetectionRateUncommited):
 
         return cls(
             id=schema.id,
-            anomaly_detection_id=schema.anomaly_detection_id,
+            anomaly_detection=AnomalyDetectionInDb.from_orm(
+                schema.anomaly_detection
+            ),
             leakage=Leakage(
                 name=schema.leakage["name"],
-                rate=np.float32(schema.leakage["rate"]),
-                duration=np.float32(schema.leakage["duration"]),
-                x=np.float32(schema.leakage["x"]),
-                y=np.float32(schema.leakage["y"]),
-                z=np.float32(schema.leakage["z"]),
+                rate=np.float64(schema.leakage["rate"]),
+                duration=np.float64(schema.leakage["duration"]),
+                x=np.float64(schema.leakage["x"]),
+                y=np.float64(schema.leakage["y"]),
+                z=np.float64(schema.leakage["z"]),
             ),
             concentrations=np.array(
-                schema.concentrations.split(","), dtype=np.float32
+                schema.concentrations.split(","), dtype=np.float64
             ),
-            rate=np.float32(schema.rate),
+            rate=np.float64(schema.rate),
         )

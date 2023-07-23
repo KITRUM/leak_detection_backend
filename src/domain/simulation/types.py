@@ -17,6 +17,6 @@ class RegressionProcessor(Protocol):
         leakage: Leakage,
         current: Current,
         coordinates: CartesianCoordinates,
-        Cd: np.float32,
-    ) -> np.float32:
+        Cd: np.float64,
+    ) -> np.float64:
         ...

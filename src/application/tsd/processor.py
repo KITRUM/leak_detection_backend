@@ -9,10 +9,11 @@ import asyncio
 from loguru import logger
 
 from src.application.data_lake import data_lake
-from src.application.tsd import mock
 from src.config import settings
 from src.domain.sensors import Sensor, SensorsRepository
 from src.domain.tsd import Tsd, TsdRaw, services
+
+from ..tsd import mock
 
 __all__ = ("process", "process_for_existed_sensors")
 

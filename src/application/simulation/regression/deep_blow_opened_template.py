@@ -9,16 +9,16 @@ from src.infrastructure.physics import constants
 
 def calculate_time_to_reach_sensor(
     coordinates: CartesianCoordinates, current: Current
-) -> np.float32:
+) -> np.float64:
     R = coordinates.x
     # Johansen (2022) uses this R instead:
     # R = sqrt(sensor.x_transformed * sensor.x_transformed + sensor.y_transformed * sensor.y_transformed)
-    return np.float32(R / current.magnitude)
+    return np.float64(R / current.magnitude)
 
 
 def calculate_plume_rise(
-    leakage: Leakage, u: np.float32, t: np.float32
-) -> np.float32:
+    leakage: Leakage, u: np.float64, t: np.float64
+) -> np.float64:
     """Reference values for u and t from johansen (2022), p.9"""
 
     parameters = settings.simulation.parameters
@@ -32,16 +32,16 @@ def calculate_plume_rise(
     u_hat = (u / uref) ** parameters.p  # convert uref to m/s
     t_hat = (t / tref) ** parameters.q
 
-    return np.float32(leakage.z + parameters.a * u_hat * t_hat)
+    return np.float64(leakage.z + parameters.a * u_hat * t_hat)
 
 
 def calculate_plume_width(
     leakage: Leakage,
     current: Current,
-    t_sensor: np.float32,
-    plume_rise: np.float32,
-    Cd: np.float32,
-) -> np.float32:
+    t_sensor: np.float64,
+    plume_rise: np.float64,
+    Cd: np.float64,
+) -> np.float64:
     parameters = settings.simulation.parameters
 
     # The solved integral (Eq.(8)) can now be computed:
@@ -79,17 +79,17 @@ def get_concentration(
     leakage: Leakage,
     current: Current,
     coordinates: CartesianCoordinates,
-    Cd: np.float32,
-) -> np.float32:
+    Cd: np.float64,
+) -> np.float64:
     # First find the time it takes for the plume to reach the sensor
-    t_sensor: np.float32 = calculate_time_to_reach_sensor(
+    t_sensor: np.float64 = calculate_time_to_reach_sensor(
         coordinates=coordinates, current=current
     )
 
     # NOTE: If the sensor is `behind` the leak, or the current is zero
     # so the leak won't be detected
     if t_sensor <= 0 or current.magnitude == 0.0:
-        return np.float32(0)
+        return np.float64(0)
 
     # Calculate the plume rise and the characteristic radius of the plume
     z_plume = calculate_plume_rise(

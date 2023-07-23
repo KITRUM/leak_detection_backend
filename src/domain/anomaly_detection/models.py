@@ -63,9 +63,9 @@ class AnomalyDetection(AnomalyDetectionBase, InternalModel):
 class MatrixProfile(InternalModel):
     """The Matrix profile intermediate data structure."""
 
-    max_dis: np.float32
+    max_dis: np.float64
     counter: int = 0
-    last_values: list[np.float32] = Field(default_factory=list)
+    last_values: list[np.float64] = Field(default_factory=list)
     warning: int = settings.anomaly_detection.warning
     alert: int = settings.anomaly_detection.alert
     window: int = settings.anomaly_detection.window_size

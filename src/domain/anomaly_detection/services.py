@@ -5,20 +5,19 @@ from loguru import logger
 from sqlalchemy import delete
 from stumpy.aampi import aampi
 
-from src.domain.anomaly_detection.constants import (
-    INITIAL_BASELINE_HIGH,
-    INITIAL_BASELINE_LOW,
-)
-from src.domain.anomaly_detection.models import (
+from src.domain.tsd import Tsd
+from src.infrastructure.database import AnomalyDetectionsTable
+from src.infrastructure.database.services.transaction import transaction
+
+from .constants import INITIAL_BASELINE_HIGH, INITIAL_BASELINE_LOW
+from .models import (
     AnomalyDetection,
     AnomalyDetectionUncommited,
     AnomalyDeviation,
     MatrixProfile,
     MatrixProfileLevel,
 )
-from src.domain.anomaly_detection.repository import AnomalyDetectionRepository
-from src.domain.tsd import Tsd
-from src.infrastructure.database import AnomalyDetectionsTable, transaction
+from .repository import AnomalyDetectionRepository
 
 # Temporary variable
 # TODO: Should be changed to the database later.
@@ -40,6 +39,18 @@ async def delete_all():
     """This function is used by the startup hook if debug mode is on."""
 
     await AnomalyDetectionRepository().execute(delete(AnomalyDetectionsTable))
+
+
+@transaction
+async def get_historical_data(
+    sensor_id: int,
+) -> list[AnomalyDetection]:
+    """Get the historical data."""
+
+    return [
+        instance
+        async for instance in AnomalyDetectionRepository().by_sensor(sensor_id)
+    ]
 
 
 def copy_initial_baseline(
@@ -86,7 +97,7 @@ def process(tsd: Tsd) -> AnomalyDetectionUncommited:
         logger.success("Create the matrix profile")
         baseline = copy_initial_baseline(level=MatrixProfileLevel.HIGH)
         matrix_profile = MatrixProfile(
-            max_dis=np.float32(max(baseline.P_)),
+            max_dis=np.float64(max(baseline.P_)),
             baseline=baseline,
         )
         MATRIX_PROFILES[tsd.sensor.id] = matrix_profile
@@ -103,6 +114,9 @@ def process(tsd: Tsd) -> AnomalyDetectionUncommited:
         deviation = AnomalyDeviation.WARNING
     else:
         deviation = AnomalyDeviation.CRITICAL
+
+    # TODO: Remove this line
+    deviation = AnomalyDeviation.CRITICAL
 
     create_schema = AnomalyDetectionUncommited(
         value=deviation, time_series_data_id=tsd.id
