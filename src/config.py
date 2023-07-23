@@ -56,18 +56,18 @@ class AnomalyDetectionSettings(BaseModel):
 
 
 class SimulationParameters(InternalModel):
-    seawater_temperature: np.float32 = np.float32(6.2)
-    depth: np.float32 = np.float32(70)
-    detection_limit: np.float32 = np.float32(5.0e-7)
-    current_period: np.float32 = np.float32(2)
-    a: np.float32 = np.float32(5.5)
-    p: np.float32 = np.float32(-0.4)
-    q: np.float32 = np.float32(0.34)
-    cd: np.float32 = np.float32(0.001)
-    alpha: np.float32 = np.float32(0.32)
-    gamma: np.float32 = np.float32(1.224)
-    kappa: np.float32 = np.float32(0.41)
-    uref: np.float32 = np.float32(0.30)
+    seawater_temperature: np.float64 = np.float64(6.2)
+    depth: np.float64 = np.float64(70)
+    detection_limit: np.float64 = np.float64(5.0e-7)
+    current_period: np.float64 = np.float64(2)
+    a: np.float64 = np.float64(5.5)
+    p: np.float64 = np.float64(-0.4)
+    q: np.float64 = np.float64(0.34)
+    cd: np.float64 = np.float64(0.001)
+    alpha: np.float64 = np.float64(0.32)
+    gamma: np.float64 = np.float64(1.224)
+    kappa: np.float64 = np.float64(0.41)
+    uref: np.float64 = np.float64(0.30)
     tref: int = 600
 
 

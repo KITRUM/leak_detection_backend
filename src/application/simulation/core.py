@@ -13,9 +13,9 @@ from src.domain.currents import services as currents_services
 from src.domain.sensors import Sensor, SensorsRepository
 from src.domain.simulation import (
     CartesianCoordinates,
+    Detection,
     Leakage,
     RegressionProcessor,
-    SimulationDetectionRate,
     SimulationDetectionRateInDb,
     SimulationDetectionRateUncommited,
 )
@@ -48,12 +48,12 @@ def get_sensor_transformed_coordinates(
     beta = np.sin(rotate_angle)
 
     coordinates = CartesianCoordinates(
-        x=np.float32(sensor.x * alpha - sensor.y * beta),
-        y=np.float32(sensor.x * beta + sensor.y * alpha),
+        x=np.float64(sensor.x * alpha - sensor.y * beta),
+        y=np.float64(sensor.x * beta + sensor.y * alpha),
     )
 
-    transformed_leak_x = np.float32(leak.x * alpha - leak.y * beta)
-    transformed_leak_y = np.float32(leak.x * beta + leak.y * alpha)
+    transformed_leak_x = np.float64(leak.x * alpha - leak.y * beta)
+    transformed_leak_y = np.float64(leak.x * beta + leak.y * alpha)
 
     # Shift the coordinates so that the origin is at the leak
     coordinates.x -= transformed_leak_x
@@ -62,22 +62,22 @@ def get_sensor_transformed_coordinates(
     return coordinates
 
 
-def get_detection_rate(
+def get_detection(
     sensor: Sensor,
     leakage: Leakage,
     currents: list[Current],
     waves: list[Wave],
-) -> SimulationDetectionRate:
-    concentrations: NDArray[np.float32] = np.zeros(
-        len(currents), dtype=np.float32
+) -> Detection:
+    concentrations: NDArray[np.float64] = np.zeros(
+        len(currents), dtype=np.float64
     )
 
     for index, (current, wave) in enumerate(zip(currents, waves)):
         # Calculate wave-enhanced drag coefficient
-        Cd: np.float32 = (
+        Cd: np.float64 = (
             get_wave_drag_coefficient(wave=wave, current=current)
             if settings.simulation.options.wave_current_interaction is True
-            else np.float32(0)
+            else np.float64(0)
         )
 
         transformed_coordinates: CartesianCoordinates = (
@@ -88,7 +88,7 @@ def get_detection_rate(
             regression_dispatcher.get_processor_callback(sensor.template)
         )
 
-        concentration: np.float32 = regression_processor(
+        concentration: np.float64 = regression_processor(
             sensor=sensor,
             leakage=leakage,
             current=current,
@@ -98,7 +98,7 @@ def get_detection_rate(
 
         concentrations[index] = concentration
 
-    return SimulationDetectionRate(
+    return Detection(
         sensor=sensor, leakage=leakage, concentrations=concentrations
     )
 
@@ -146,7 +146,7 @@ async def process():
         )
 
     # WARNING: Unused variable (taken from the deprecated project)
-    # delta_t: np.float32 = np.float32(
+    # delta_t: np.float64 = np.float64(
     #     settings.simulation.parameters.tref / len(currents_dataset)
     # )
 
@@ -155,8 +155,8 @@ async def process():
             anomaly_detection.time_series_data.sensor_id
         )
 
-        detections: list[SimulationDetectionRate] = [
-            get_detection_rate(
+        detections: list[Detection] = [
+            get_detection(
                 sensor=sensor,
                 leakage=leakage,
                 currents=currents_dataset,
@@ -168,6 +168,7 @@ async def process():
         # ------------------------------------------------
         # ========== Detection rates processing ==========
         # ------------------------------------------------
+        simulation_detection_rates: list[SimulationDetectionRateInDb] = []
         for detection in detections:
             above_limit = np.zeros(detection.concentrations.shape)
             above_limit[
@@ -186,16 +187,21 @@ async def process():
                 rate=float(np.sum(above_limit) / np.size(above_limit)),
             )
 
+            # TODO: change to batch save all detections
             instance: SimulationDetectionRateInDb = (
                 await (
                     simulation_services.save_simulation_detection_rate(schema)
                 )
             )
 
-            # Update the data lake
-            # WARNING: The object that stores into the data lake
-            #          has the next amount of concentrations:
-            #          total_concentrations = sum(leaks) * sum(currents)
-            #          It might be a good idea to store the whole data into the
-            #          database and save ids into the data lake.
-            data_lake.simulation_detection_rates.storage.append(instance)
+            simulation_detection_rates.append(instance)
+
+        # Update the data lake
+        # WARNING: The object that stores into the data lake
+        #          has the next amount of concentrations:
+        #          total_concentrations = sum(leaks) * sum(currents)
+        #          It might be a good idea to store the whole data into the
+        #          database and save ids into the data lake.
+        data_lake.simulation_detection_rates.storage.append(
+            simulation_detection_rates
+        )

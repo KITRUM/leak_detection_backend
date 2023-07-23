@@ -12,7 +12,7 @@ from src.infrastructure.physics import constants
 
 def get_wave_drag_coefficient(
     wave: Wave, current: Current, radians=True
-) -> np.float32:
+) -> np.float64:
     """Wrapper for the actual calculation.
     Ub - Current speed in cm/s
     Db - Current direction, degrees or radians
@@ -24,12 +24,12 @@ def get_wave_drag_coefficient(
     💩 This piece of a code is quite shitty. Need to be refactored.
     """
 
-    Ub: np.float32 = current.magnitude * 100  # meter to centimeter
-    Db: np.float32 = current.angle_from_north
-    Hs: np.float32 = wave.height
-    Tp: np.float32 = wave.period
-    DD: np.float32 = wave.angle_from_north
-    depth: np.float32 = settings.simulation.parameters.depth
+    Ub: np.float64 = current.magnitude * 100  # meter to centimeter
+    Db: np.float64 = current.angle_from_north
+    Hs: np.float64 = wave.height
+    Tp: np.float64 = wave.period
+    DD: np.float64 = wave.angle_from_north
+    depth: np.float64 = settings.simulation.parameters.depth
 
     # Constants, defined in the "Parameters" tab of
     # Øistein's excel sheet on wave data

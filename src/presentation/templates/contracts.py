@@ -74,13 +74,13 @@ class TemplateCreateRequestBody(PublicModel):
             "waves_path": waves_path,
             "simulated_leaks_path": simulated_leaks_path,
             "platform_id": platform_id,
-            "angle_from_north": np.float32(self.angle_from_north),
-            "height": np.float32(self.height) if self.height else None,
-            "internal_volume": np.float32(self.internal_volume)
+            "angle_from_north": np.float64(self.angle_from_north),
+            "height": np.float64(self.height) if self.height else None,
+            "internal_volume": np.float64(self.internal_volume)
             if self.internal_volume
             else None,
-            "length": np.float32(self.length) if self.length else None,
-            "width": np.float32(self.width) if self.width else None,
+            "length": np.float64(self.length) if self.length else None,
+            "width": np.float64(self.width) if self.width else None,
         }
 
         return TemplateUncommited(**payload)

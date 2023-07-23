@@ -12,19 +12,19 @@ __all__ = ("TemplateUncommited", "Template")
 
 
 class GeometryInformation(InternalModel):
-    fore: np.float32
-    aft: np.float32
-    port: np.float32
-    starboard: np.float32
+    fore: np.float64
+    aft: np.float64
+    port: np.float64
+    starboard: np.float64
 
     @classmethod
     def from_db_field(cls, field: dict | None) -> "GeometryInformation | None":
         return (
             cls(
-                fore=np.float32(field["fore"]),
-                aft=np.float32(field["aft"]),
-                port=np.float32(field["port"]),
-                starboard=np.float32(field["starboard"]),
+                fore=np.float64(field["fore"]),
+                aft=np.float64(field["aft"]),
+                port=np.float64(field["port"]),
+                starboard=np.float64(field["starboard"]),
             )
             if field
             else None
@@ -32,7 +32,7 @@ class GeometryInformation(InternalModel):
 
     @property
     @lru_cache(maxsize=1)
-    def as_array(self) -> NDArray[np.float32]:
+    def as_array(self) -> NDArray[np.float64]:
         return np.array([])
 
 
@@ -46,20 +46,20 @@ class TemplateUncommited(InternalModel):
     simulated_leaks_path: str
 
     name: str
-    angle_from_north: np.float32
-    height: np.float32 | None = None
-    z_roof: np.float32 | None = None
+    angle_from_north: np.float64
+    height: np.float64 | None = None
+    z_roof: np.float64 | None = None
 
     # Semi-closed parameters
     porosity: dict | None = Field(default_factory=dict)
     wall_area: dict | None = Field(default_factory=dict)
     inclination: dict | None = Field(default_factory=dict)
 
-    internal_volume: np.float32 | None = None
+    internal_volume: np.float64 | None = None
 
     # Required if internal_volume is not defined
-    length: np.float32 | None = None
-    width: np.float32 | None = None
+    length: np.float64 | None = None
+    width: np.float64 | None = None
 
     platform_id: int
 
@@ -89,15 +89,15 @@ class Template(TemplateUncommited):
             waves_path=Path(schema.waves_path),
             simulated_leaks_path=Path(schema.simulated_leaks_path),
             name=schema.name,
-            angle_from_north=np.float32(schema.angle_from_north),
-            z_roof=np.float32(schema.z_roof) if schema.z_roof else None,
+            angle_from_north=np.float64(schema.angle_from_north),
+            z_roof=np.float64(schema.z_roof) if schema.z_roof else None,
             porosity=GeometryInformation.from_db_field(schema.porosity),
             wall_area=GeometryInformation.from_db_field(schema.wall_area),
             inclination=GeometryInformation.from_db_field(schema.inclination),
-            internal_volume=np.float32(schema.internal_volume)
+            internal_volume=np.float64(schema.internal_volume)
             if schema.internal_volume
             else None,
-            length=np.float32(schema.length) if schema.length else None,
-            width=np.float32(schema.width) if schema.width else None,
+            length=np.float64(schema.length) if schema.length else None,
+            width=np.float64(schema.width) if schema.width else None,
             platform_id=schema.platform_id,
         )

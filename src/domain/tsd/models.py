@@ -23,7 +23,7 @@ class TsdUncommited(TsdRaw, InternalModel):
     to the repository operation.
     """
 
-    ppmv: np.float32
+    ppmv: np.float64
     sensor_id: int
 
     def __str__(self) -> str:
@@ -36,23 +36,23 @@ class TsdInDb(TsdUncommited):
     id: int
 
     @validator("ppmv", pre=True)
-    def convert_ppmv(cls, value: float | np.float32) -> np.float32:
-        if type(value) == np.float32:
+    def convert_ppmv(cls, value: float | np.float64) -> np.float32:
+        if type(value) == np.float64:
             return value
 
-        return np.float32(value)
+        return np.float64(value)
 
 
 class Tsd(TsdRaw, InternalModel):
     """The internal representation of reach Time Series Data."""
 
     id: int
-    ppmv: np.float32
+    ppmv: np.float64
     sensor: SensorInDb
 
     @validator("ppmv", pre=True)
-    def convert_ppmv(cls, value: float | np.float32) -> np.float32:
-        if type(value) == np.float32:
+    def convert_ppmv(cls, value: float | np.float64) -> np.float32:
+        if type(value) == np.float64:
             return value
 
-        return np.float32(value)
+        return np.float64(value)
