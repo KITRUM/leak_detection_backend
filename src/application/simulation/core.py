@@ -198,6 +198,4 @@ async def process():
             #          total_concentrations = sum(leaks) * sum(currents)
             #          It might be a good idea to store the whole data into the
             #          database and save ids into the data lake.
-            data_lake.simulation_detection_rates[
-                anomaly_detection.id
-            ].storage.append(instance)
+            data_lake.simulation_detection_rates.storage.append(instance)

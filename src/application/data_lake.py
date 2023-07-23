@@ -69,9 +69,7 @@ class DataLake:
     anomaly_detections_by_sensor: dict[int, LakeItem[AnomalyDetection]]
 
     # Storage for reducing the database usage. Used for background processing
-    simulation_detection_rates: dict[
-        int, LakeItem[SimulationDetectionRateInDb]
-    ]
+    simulation_detection_rates: LakeItem[SimulationDetectionRateInDb]
 
 
 # TODO: Add limits
@@ -83,7 +81,5 @@ data_lake = DataLake(
     anomaly_detections_by_sensor=defaultdict(
         partial(LakeItem[AnomalyDetection])
     ),
-    simulation_detection_rates=defaultdict(
-        partial(LakeItem[SimulationDetectionRateInDb])
-    ),
+    simulation_detection_rates=LakeItem[SimulationDetectionRateInDb](),
 )
