@@ -1,17 +1,24 @@
 import numpy as np
 from numpy.typing import NDArray
-from pydantic import Field
 
 from src.domain.sensors import Sensor
+from src.infrastructure.database.tables import SimulationDetectionRatesTable
 from src.infrastructure.models import InternalModel
 
-__all__ = ("CartesianCoordinates", "Leakage", "DetectionRate")
+__all__ = (
+    "CartesianCoordinates",
+    "Leakage",
+    "SimulationDetectionRate",
+    "SimulationDetectionRateUncommited",
+    "SimulationDetectionRateInDb",
+)
 
 
 class CartesianCoordinates(InternalModel):
     """Used for the simulation processing as
     a sensor's transformed coordinates.
     """
+
     x: np.float32
     y: np.float32
 
@@ -41,12 +48,48 @@ class Leakage(InternalModel):
         )
 
 
-class DetectionRate(InternalModel):
-    """Represents the simulation's result."""
+class SimulationDetectionRate(InternalModel):
+    """Represents the simulation's detection payload."""
 
     sensor: Sensor
     leakage: Leakage
-    concentrations: list[np.float32] = Field(default_factory=list)
+    concentrations: NDArray[np.float32]
 
-    # Only for closed template
-    equilibrium_concentration: list[np.float32] = Field(default_factory=list)
+
+class SimulationDetectionRateUncommited(InternalModel):
+    anomaly_detection_id: int
+    leakage: dict
+    rate: float
+    # HACK: Since SQLite does not support arrays
+    #       the string convestion is used
+    concentrations: str
+
+
+class SimulationDetectionRateInDb(SimulationDetectionRateUncommited):
+    id: int
+    leakage: Leakage
+    rate: np.float32
+    concentrations: NDArray[np.float32]
+
+    @classmethod
+    def from_orm(
+        cls, schema: SimulationDetectionRatesTable
+    ) -> "SimulationDetectionRateInDb":
+        """Convert ORM schema representation into the internal model."""
+
+        return cls(
+            id=schema.id,
+            anomaly_detection_id=schema.anomaly_detection_id,
+            leakage=Leakage(
+                name=schema.leakage["name"],
+                rate=np.float32(schema.leakage["rate"]),
+                duration=np.float32(schema.leakage["duration"]),
+                x=np.float32(schema.leakage["x"]),
+                y=np.float32(schema.leakage["y"]),
+                z=np.float32(schema.leakage["z"]),
+            ),
+            concentrations=np.array(
+                schema.concentrations.split(","), dtype=np.float32
+            ),
+            rate=np.float32(schema.rate),
+        )

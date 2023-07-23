@@ -52,7 +52,6 @@ class AnomalyDetectionRepository(BaseRepository[AnomalyDetectionsTable]):
     ) -> AsyncGenerator[AnomalyDetection, None]:
         """Fetch all anomaly detections for the sensor."""
 
-        # .join(self.schema_class.time_series_data)
         query: Select = (
             select(self.schema_class)
             .join(self.schema_class.time_series_data)

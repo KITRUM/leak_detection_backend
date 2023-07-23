@@ -4,6 +4,7 @@ from loguru import logger
 from src.application import anomaly_detection, simulation, tsd
 from src.config import settings
 from src.domain.anomaly_detection import services as anomaly_detection_services
+from src.domain.simulation import services as simulation_services
 from src.domain.tsd import services as tsd_services
 from src.infrastructure import application
 from src.presentation.anomaly_detection import (
@@ -39,7 +40,7 @@ shutdown_tasks = []
 if settings.debug is True:
     shutdown_tasks.append(anomaly_detection_services.delete_all)
     shutdown_tasks.append(tsd_services.delete_all)
-    # shutdown_tasks.append(simulation.delete_all)
+    shutdown_tasks.append(simulation_services.delete_all)
 
 
 # Adjust the application

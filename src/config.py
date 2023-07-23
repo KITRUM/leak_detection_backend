@@ -81,6 +81,7 @@ class SimulationOptions(BaseModel):
 class SimulationSettings(BaseModel):
     options: SimulationOptions = SimulationOptions()
     parameters: SimulationParameters = SimulationParameters()
+    turn_on: bool = False
 
 
 # Settings are powered by pydantic
