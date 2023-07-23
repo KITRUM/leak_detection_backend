@@ -118,7 +118,16 @@ async def process():
     if not settings.simulation.turn_on:
         return
 
-    print(".................")
+    if settings.debug is False:
+        raise NotImplementedError(
+            "Currently the simulation is not working with real data"
+        )
+
+    if settings.simulation.options.run_open_template is False:
+        raise NotImplementedError(
+            "Closed template simulation is not implemented yet"
+        )
+
     leakages_dataset: list[
         Leakage
     ] = simulation_services.load_leakages_dataset(
@@ -142,16 +151,6 @@ async def process():
     # )
 
     async for anomaly_detection in data_lake.anomaly_detections.consume():
-        if settings.debug is False:
-            raise NotImplementedError(
-                "Currently the simulation is not working with real data"
-            )
-
-        if settings.simulation.options.run_open_template is False:
-            raise NotImplementedError(
-                "Closed template simulation is not implemented yet"
-            )
-
         sensor: Sensor = await SensorsRepository().get(
             anomaly_detection.time_series_data.sensor_id
         )
