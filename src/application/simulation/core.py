@@ -4,6 +4,7 @@ of the simulation processing that producing the detection rates
 """
 
 import numpy as np
+from numpy.typing import NDArray
 
 from src.application.data_lake import data_lake
 from src.config import settings
@@ -12,9 +13,11 @@ from src.domain.currents import services as currents_services
 from src.domain.sensors import Sensor, SensorsRepository
 from src.domain.simulation import (
     CartesianCoordinates,
-    DetectionRate,
     Leakage,
     RegressionProcessor,
+    SimulationDetectionRate,
+    SimulationDetectionRateInDb,
+    SimulationDetectionRateUncommited,
 )
 from src.domain.simulation import services as simulation_services
 from src.domain.waves import Wave
@@ -64,10 +67,12 @@ def get_detection_rate(
     leakage: Leakage,
     currents: list[Current],
     waves: list[Wave],
-) -> DetectionRate:
-    rate = DetectionRate(sensor=sensor, leakage=leakage)
+) -> SimulationDetectionRate:
+    concentrations: NDArray[np.float32] = np.zeros(
+        len(currents), dtype=np.float32
+    )
 
-    for current, wave in zip(currents, waves):
+    for index, (current, wave) in enumerate(zip(currents, waves)):
         # Calculate wave-enhanced drag coefficient
         Cd: np.float32 = (
             get_wave_drag_coefficient(wave=wave, current=current)
@@ -90,9 +95,12 @@ def get_detection_rate(
             coordinates=transformed_coordinates,
             Cd=Cd,
         )
-        rate.concentrations.append(concentration)
 
-    return rate
+        concentrations[index] = concentration
+
+    return SimulationDetectionRate(
+        sensor=sensor, leakage=leakage, concentrations=concentrations
+    )
 
 
 async def process():
@@ -106,6 +114,11 @@ async def process():
              since it is required by the processing algorithm.
     """
 
+    # NOTE: Skip if settings are set
+    if not settings.simulation.turn_on:
+        return
+
+    print(".................")
     leakages_dataset: list[
         Leakage
     ] = simulation_services.load_leakages_dataset(
@@ -123,12 +136,11 @@ async def process():
             message="Waves and currents seed files have different number of columns"
         )
 
-    # WARNING: Unused variable
-    delta_t: np.float32 = np.float32(
-        settings.simulation.parameters.tref / len(currents_dataset)
-    )
+    # WARNING: Unused variable (taken from the deprecated project)
+    # delta_t: np.float32 = np.float32(
+    #     settings.simulation.parameters.tref / len(currents_dataset)
+    # )
 
-    # type is AnomalyDetection
     async for anomaly_detection in data_lake.anomaly_detections.consume():
         if settings.debug is False:
             raise NotImplementedError(
@@ -144,7 +156,7 @@ async def process():
             anomaly_detection.time_series_data.sensor_id
         )
 
-        rates: list[DetectionRate] = [
+        detections: list[SimulationDetectionRate] = [
             get_detection_rate(
                 sensor=sensor,
                 leakage=leakage,
@@ -154,10 +166,39 @@ async def process():
             for leakage in leakages_dataset
         ]
 
-        # Update the data lake
-        # WARNING: The object that stores into the data lake
-        #          has the next amount of concentrations:
-        #          total_concentrations = sum(leaks) * sum(currents)
-        #          It might be a good idea to store the whole data into the
-        #          database and save ids into the data lake.
-        data_lake.detection_rates_by_sensor[sensor.id].storage.append(rates)
+        # ------------------------------------------------
+        # ========== Detection rates processing ==========
+        # ------------------------------------------------
+        for detection in detections:
+            above_limit = np.zeros(detection.concentrations.shape)
+            above_limit[
+                np.where(
+                    detection.concentrations
+                    > settings.simulation.parameters.detection_limit
+                )
+            ] = 1
+
+            schema = SimulationDetectionRateUncommited(
+                anomaly_detection_id=anomaly_detection.id,
+                concentrations=",".join(
+                    str(el) for el in detection.concentrations
+                ),
+                leakage=detection.leakage.flat_dict(),
+                rate=float(np.sum(above_limit) / np.size(above_limit)),
+            )
+
+            instance: SimulationDetectionRateInDb = (
+                await (
+                    simulation_services.save_simulation_detection_rate(schema)
+                )
+            )
+
+            # Update the data lake
+            # WARNING: The object that stores into the data lake
+            #          has the next amount of concentrations:
+            #          total_concentrations = sum(leaks) * sum(currents)
+            #          It might be a good idea to store the whole data into the
+            #          database and save ids into the data lake.
+            data_lake.simulation_detection_rates[
+                anomaly_detection.id
+            ].storage.append(instance)
