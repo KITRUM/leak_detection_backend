@@ -20,6 +20,7 @@ __all__ = (
     "SensorsTable",
     "TimeSeriesDataTable",
     "AnomalyDetectionsTable",
+    "SimulationDetectionRatesTable",
     "EventsTable",
 )
 
@@ -110,7 +111,7 @@ class TimeSeriesDataTable(Base):
         "SensorsTable", uselist=False, back_populates="time_series_data"
     )
 
-    anomaly_detections = relationship(
+    anomaly_detection = relationship(
         "AnomalyDetectionsTable",
         uselist=False,
         back_populates="time_series_data",
@@ -130,25 +131,33 @@ class AnomalyDetectionsTable(Base):
     time_series_data = relationship(
         "TimeSeriesDataTable",
         uselist=False,
-        back_populates="anomaly_detections",
+        back_populates="anomaly_detection",
+    )
+
+    simulation_detection_rates = relationship(
+        "SimulationDetectionRatesTable",
+        uselist=True,
+        back_populates="anomaly_detection",
     )
 
 
-# class SimulationResultsTable(Base):
-#     __tablename__ = "simulation_results"
+class SimulationDetectionRatesTable(Base):
+    __tablename__ = "simulation_detection_rates"
 
-#     value: str = Column(String, nullable=False)  # type: ignore[var-annotated]
+    leakage: dict = Column(JSON, nullable=False)  # type: ignore
+    concentrations: str = Column(String, nullable=False)  # type: ignore
+    rate: float = Column(Float, nullable=False)  # type: ignore
 
-#     time_series_data_id: int = Column(
-#         ForeignKey(TimeSeriesDataTable.id),
-#         nullable=False,
-#     )  # type: ignore[var-annotated]
+    anomaly_detection_id: int = Column(
+        ForeignKey(AnomalyDetectionsTable.id),
+        nullable=False,
+    )  # type: ignore[var-annotated]
 
-#     time_series_data = relationship(
-#         "TimeSeriesDataTable",
-#         uselist=False,
-#         back_populates="anomaly_detections",
-#     )
+    anomaly_detection = relationship(
+        "AnomalyDetectionsTable",
+        uselist=False,
+        back_populates="simulation_detection_rates",
+    )
 
 
 class EventsTable(Base):
