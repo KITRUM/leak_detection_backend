@@ -2,7 +2,8 @@
 This module includes the producer/consumer implementation for
 the project's data lake.
 
-It is not placed in the infrastructure layer since it depends on internal data models.
+It is not placed in the infrastructure layer,
+since it depends on internal data models.
 """
 
 import asyncio

@@ -34,11 +34,13 @@ __all__ = ("process",)
 def get_sensor_transformed_coordinates(
     sensor: Sensor, leak: Leakage, current: Current
 ) -> CartesianCoordinates:
-    """Transforms the (x,y)-coordinates to fit into a cartesian coordinate system where:
+    """Transforms the (x,y)-coordinates to fit
+    into a cartesian coordinate system where:
     - The leak is at the origin in the (x,y)-plane
     - The x-axis points along the direction of the current
     """
-    # Rotate the coordinates so that the x-axis points along the direction of the current
+    # Rotate the coordinates so that the x-axis points
+    # along the direction of the current
     rotate_angle = (
         current.angle_from_north
         - constants.PI / 2
@@ -142,7 +144,10 @@ async def process():
 
     if len(waves_dataset) != len(currents_dataset):
         raise UnprocessableError(
-            message="Waves and currents seed files have different number of columns"
+            message=(
+                "Waves and currents seed files have "
+                "different number of columns"
+            )
         )
 
     # WARNING: Unused variable (taken from the deprecated project)

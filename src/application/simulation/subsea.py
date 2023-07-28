@@ -33,11 +33,15 @@ def get_wave_drag_coefficient(
 
     # Constants, defined in the "Parameters" tab of
     # Øistein's excel sheet on wave data
-    T_deep = np.sqrt(4 * constants.PI * depth / constants.G)
+    # NOTE: Unused variable
+    # T_deep = np.sqrt(4 * constants.PI * depth / constants.G)
 
     # Variables corresponding to columns in the "Waves and currents" tab
     # of Øistein's excel sheet
-    seabed = Tp > T_deep  # TODO: NOTE: Unused variable
+
+    # NOTE: Unused variable
+    # seabed = Tp > T_deep
+
     omega = 2 * constants.PI / Tp
     k_1 = omega**2 / constants.G
     k_2 = k_1 / np.tanh(k_1 * depth)
@@ -45,7 +49,10 @@ def get_wave_drag_coefficient(
     k = k_1 / np.tanh(k_3 * depth)
     Ubw = 100 * constants.H_FAC * omega * Hs / np.sinh(k * depth)
     Tau_b = constants.ROW * constants.CD * (0.01 * Ub) ** 2
-    Ustar = np.sqrt(Tau_b / constants.ROW) * 100  # NOTE: Unused variable
+
+    # NOTE: Unused variable
+    # Ustar = np.sqrt(Tau_b / constants.ROW) * 100
+
     if radians:
         # Input is in radians, do not convert
         cos_fi = -(np.cos(Db) * np.cos(DD) + np.sin(Db) * np.sin(DD))
@@ -67,7 +74,7 @@ def get_wave_drag_coefficient(
             my = 0
             Cmy = 1
         else:
-            my = Tau_b / tau_wm
+            my = Tau_b / tau_wm  # noqa: F821
             Cmy = np.sqrt(1 + 2 * my * np.abs(cos_fi) + my**2)
 
         fwc = Cmy * np.exp(

@@ -19,15 +19,16 @@ router = APIRouter(prefix="/sensors", tags=["Anomaly detections"])
 async def anomaly_detections(ws: WebSocket, sensor_id: int):
     await ws.accept()
     logger.success(
-        f"Opening WS connection for Anomaly detections fetching from sensor: {sensor_id}"
+        "Opening WS connection for Anomaly detections fetching "
+        f"from sensor: {sensor_id}"
     )
 
     # Just skip if there is no historical data in the database
     with suppress(NotFoundError):
         historical_data: list[AnomalyDetectionPublic] = [
             AnomalyDetectionPublic.from_orm(instance)
-            for instance in await anomaly_detection_services.get_historical_data(
-                sensor_id
+            for instance in (
+                await anomaly_detection_services.get_historical_data(sensor_id)
             )
         ]
 
