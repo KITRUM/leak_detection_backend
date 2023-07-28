@@ -59,10 +59,26 @@ class TemplatesTable(Base):
     z_roof: float = Column(Float, nullable=True, default=None)  # type: ignore
 
     # Semi-closed parameters
-    porosity: dict | None = Column(JSON, nullable=True, default=None)  # type: ignore
-    wall_area: dict | None = Column(JSON, nullable=True, default=None)  # type: ignore
-    inclination: dict | None = Column(JSON, nullable=True, default=None)  # type: ignore
-    internal_volume: float | None = Column(Float, nullable=True, default=None)  # type: ignore
+    porosity: dict | None = Column(  # type: ignore
+        JSON,
+        nullable=True,
+        default=None,
+    )
+    wall_area: dict | None = Column(  # type: ignore
+        JSON,
+        nullable=True,
+        default=None,
+    )
+    inclination: dict | None = Column(  # type: ignore
+        JSON,
+        nullable=True,
+        default=None,
+    )
+    internal_volume: float | None = Column(  # type: ignore
+        Float,
+        nullable=True,
+        default=None,
+    )
 
     # below parameters only required if internal_volume is not defined
     length: float = Column(Float, nullable=True, default=None)  # type: ignore

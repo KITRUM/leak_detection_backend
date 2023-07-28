@@ -12,7 +12,7 @@ def calculate_time_to_reach_sensor(
 ) -> np.float64:
     R = coordinates.x
     # Johansen (2022) uses this R instead:
-    # R = sqrt(sensor.x_transformed * sensor.x_transformed + sensor.y_transformed * sensor.y_transformed)
+    # R = sqrt(sensor.x_transformed * sensor.x_transformed + sensor.y_transformed * sensor.y_transformed)  # noqa: E501
     return np.float64(R / current.magnitude)
 
 
@@ -45,9 +45,9 @@ def calculate_plume_width(
     parameters = settings.simulation.parameters
 
     # The solved integral (Eq.(8)) can now be computed:
-    I = leakage.z * t_sensor + (t_sensor * (plume_rise - leakage.z)) / (
-        1 + parameters.q
-    )
+    I = leakage.z * t_sensor + (  # noqa: E741
+        t_sensor * (plume_rise - leakage.z)
+    ) / (1 + parameters.q)
 
     # Now we can compute sigma_d (squared) from the leak model
     kappa = parameters.kappa

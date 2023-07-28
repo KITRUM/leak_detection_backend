@@ -6,7 +6,6 @@ import json
 from typing import TypeVar
 
 import numpy as np
-from numpy.typing import NDArray
 from pydantic import BaseModel, Extra
 
 __all__ = ("InternalModel", "_InternalModel", "PublicModel", "_PublicModel")

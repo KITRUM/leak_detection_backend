@@ -191,7 +191,8 @@ async def process():
     # -------------------------------------------------------------------------
     async for detection_rates in simulation_detection_rates.consume():
         try:
-            # If there is no detection_rates in consumed instance just skip this one
+            # If there is no detection_rates in consumed instance
+            # just skip this one
             first_detection_rate = detection_rates[0]
         except IndexError:
             logger.error(
@@ -240,7 +241,8 @@ async def process():
             tsd.timestamp.strftime(DATETIME_FORMAT)
             for tsd in last_time_series_data
         ]
-        # TODO: investigate if we do need to wait for window size elements to be populated
+        # TODO: investigate if we do need to wait
+        #       for window size elements to be populated
         estimation_processor = DeprecatedEstimationProcessor(
             anomaly_severity=first_detection_rate.anomaly_detection.value,
             anomaly_concentrations=np.array(
