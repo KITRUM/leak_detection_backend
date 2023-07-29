@@ -156,6 +156,8 @@ async def process():
     #     settings.simulation.parameters.tref / len(currents_dataset)
     # )
 
+    logger.success(f"Background simulation processing")
+
     async for anomaly_detection in data_lake.anomaly_detections.consume():
         logger.debug(f"Simulation processing for {anomaly_detection.id}")
         sensor: Sensor = await SensorsRepository().get(

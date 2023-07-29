@@ -68,7 +68,7 @@ async def process(sensor: Sensor):
 async def process_for_existed_sensors():
     """This function is used as a background task reference."""
 
-    logger.success("Background time series data fetching is started")
+    logger.success("Background time series data processing")
 
     async for sensor in SensorsRepository().all():
         asyncio.create_task(process(sensor))
