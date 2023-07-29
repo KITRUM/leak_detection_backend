@@ -110,6 +110,9 @@ class SensorsTable(Base):
     time_series_data = relationship(
         "TimeSeriesDataTable", back_populates="sensor"
     )
+    estimation_summary_set = relationship(
+        "EstimationsSummariesTable", back_populates="sensor"
+    )
 
 
 class TimeSeriesDataTable(Base):
@@ -182,10 +185,17 @@ class EstimationsSummariesTable(Base):
 
     result: str = Column(String, nullable=False)  # type: ignore
     confidence: float = Column(Float, nullable=False)  # type: ignore
-    leakage_index: int = Column(Integer, nullable=False)  # type: ignore
     simulation_detection_rate_ids: str = Column(
         String, nullable=False
     )  # type: ignore[var-annotated]
+
+    sensor_id: int = Column(
+        ForeignKey(SensorsTable.id, ondelete="RESTRICT"),
+    )  # type: ignore[var-annotated]
+
+    sensor = relationship(
+        "SensorsTable", uselist=False, back_populates="estimation_summary_set"
+    )
 
 
 class EventsTable(Base):
