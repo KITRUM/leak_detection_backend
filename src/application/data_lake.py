@@ -16,6 +16,7 @@ from typing import AsyncGenerator, Deque, Generic, TypeVar
 from src.config import settings
 from src.domain.anomaly_detection import AnomalyDetection
 from src.domain.estimation import EstimationSummary
+from src.domain.events import sensors, templates
 from src.domain.simulation import SimulationDetectionRateInDb
 from src.domain.tsd import Tsd
 
@@ -58,25 +59,30 @@ class DataLake:
     P.S. The regular python deque interface is preferable.
     """
 
-    # Storage for reducing the database usage. Used for background processing
+    # Storage for reducing the database usage. Uses for background processing
     time_series_data: LakeItem[Tsd]
 
-    # Storage for reducing the database usage. Used by websocket connection
+    # Storage for reducing the database usage. Uses by websocket connection
     time_series_data_by_sensor: dict[int, LakeItem[Tsd]]
 
-    # Storage for reducing the database usage. Used for background processing
+    # Storage for reducing the database usage. Uses for background processing
     anomaly_detections: LakeItem[AnomalyDetection]
 
-    # Storage for reducing the database usage. Used by websocket connection
+    # Storage for reducing the database usage. Uses by websocket connection
     anomaly_detections_by_sensor: dict[int, LakeItem[AnomalyDetection]]
 
-    # Storage for reducing the database usage. Used for background processing
-    # Stored by anomaly id
+    # Storage for reducing the database usage. Uses for background processing
     simulation_detection_rates: LakeItem[list[SimulationDetectionRateInDb]]
+
+    # Storage for reducing the database usage. Uses by websocket connection
     estimation_summary_set_by_sensor: dict[int, LakeItem[EstimationSummary]]
 
+    # Events
+    sensors_events: dict[int, LakeItem[sensors.Event]]
+    templates_events: dict[int, LakeItem[templates.Event]]
 
-# TODO: Add limits
+
+# TODO: Add more limits
 
 data_lake = DataLake(
     time_series_data=LakeItem[Tsd](),
@@ -89,4 +95,6 @@ data_lake = DataLake(
     estimation_summary_set_by_sensor=defaultdict(
         partial(LakeItem[EstimationSummary])
     ),
+    sensors_events=defaultdict(partial(LakeItem[sensors.Event], limit=3)),
+    templates_events=defaultdict(partial(LakeItem[templates.Event], limit=3)),
 )
