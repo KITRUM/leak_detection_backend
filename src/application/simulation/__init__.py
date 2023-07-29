@@ -6,4 +6,4 @@ It dispatches the data flow and logic between next domains:
     - waves
 """
 
-from src.application.simulation.core import *  # noqa: F401, F403
+from .core import *  # noqa: F401, F403

@@ -10,6 +10,7 @@ It depends on:
 
 from loguru import logger
 
+from src.application import events
 from src.application.data_lake import data_lake
 from src.domain.anomaly_detection import (
     AnomalyDetection,
@@ -24,10 +25,11 @@ async def process():
     to the database for making the history available.
     """
 
-    logger.success(f"Background anomaly detection processing")
+    logger.success("Background anomaly detection processing")
 
     async for tsd in data_lake.time_series_data.consume():  # type is Tsd
         logger.debug(f"Anomaly detection processing: {tsd.id}")
+
         create_schema: AnomalyDetectionUncommited = services.process(tsd)
 
         # Save a detection to the database
@@ -40,3 +42,6 @@ async def process():
         data_lake.anomaly_detections_by_sensor[tsd.sensor.id].storage.append(
             anomaly_detection
         )
+
+        # Handle the event
+        await events.sensors.process(anomaly_detection)
