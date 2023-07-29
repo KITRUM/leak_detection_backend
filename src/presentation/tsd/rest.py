@@ -29,7 +29,7 @@ async def time_series_data(ws: WebSocket, sensor_id: int):
 
     historical_tsd_set: list[TsdPublic] = [
         TsdPublic.from_orm(instance)
-        async for instance in tsd_services.get_historical_data(sensor_id)
+        for instance in (await tsd_services.get_historical_data(sensor_id))
     ]
 
     # WARNING: The historical data should be sent by chanks since
