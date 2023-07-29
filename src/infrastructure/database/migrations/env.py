@@ -10,8 +10,9 @@ from src.config import settings
 from src.infrastructure.database.tables import (  # noqa: F401
     AnomalyDetectionsTable,
     Base,
-    EventsTable,
+    SensorsEventsTable,
     SensorsTable,
+    TemplatesEventsTable,
     TemplatesTable,
     TimeSeriesDataTable,
 )
