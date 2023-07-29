@@ -20,7 +20,7 @@ class SimulationDetectionRatesRepository(
     schema_class = SimulationDetectionRatesTable
 
     async def get(self, id_: int) -> SimulationDetectionRateInDb:
-        """Fetch the sensor by id."""
+        """Fetch the database record by id."""
 
         query: Select = (
             select(self.schema_class)
