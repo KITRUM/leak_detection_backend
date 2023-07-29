@@ -229,7 +229,7 @@ async def process():
 
     simulation_detection_rates = data_lake.simulation_detection_rates  # alias
 
-    logger.success(f"Background estimation processing")
+    logger.success("Background estimation processing")
 
     # -------------------------------------------------------------------------
     # Consume and process simulations for the estimation
