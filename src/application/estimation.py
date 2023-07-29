@@ -18,13 +18,14 @@ from src.domain.estimation import (
     DATETIME_FORMAT,
     EstimationResult,
     EstimationSummary,
+    EstimationSummaryUncommited,
     services,
 )
 from src.domain.platforms import Platform, TagInfo
+from src.domain.simulation import SimulationDetectionRateInDb
 from src.domain.templates import services as templates_services
 from src.domain.tsd import Tsd, TsdInDb
 from src.domain.tsd import services as tsd_services
-from src.infrastructure.errors.base import BaseError
 
 __all__ = ("process",)
 
@@ -44,11 +45,16 @@ class DeprecatedEstimationProcessor:
         anomaly_severity: AnomalyDeviation,
         anomaly_concentrations: NDArray[np.float64],
         anomaly_timestamps: list[str],
-        detection_rates: NDArray[np.float64],
+        detection_rates: list[SimulationDetectionRateInDb],
         simulator_concentrations: NDArray,
         sensor_number: int,
     ) -> None:
-        self.detection_rates: NDArray = detection_rates
+        self._detection_rates_ids: list[int] = [
+            rate.id for rate in detection_rates
+        ]
+        self.detection_rates: NDArray = np.array(
+            [rate.concentrations for rate in detection_rates]
+        )
         self.simulator_concentrations: NDArray = simulator_concentrations
 
         assert (
@@ -93,11 +99,6 @@ class DeprecatedEstimationProcessor:
         # TODO: Add the estimation processing functionality
         # =============================================================
 
-        result = EstimationSummary(
-            result=EstimationResult.SENSOR_NOT_AVAILABLE,
-            confidence=np.float64(0.0),
-            leakage_index=-1,
-        )
         corrmat = {"mi": 0, "dtw": 0, "mpdist": 0}
         # Leak correlation matrix: nr_sensors x nr_leaks
         leak_mat = np.zeros((self.nsensors, self.nleaks), dtype=np.int32)
@@ -112,7 +113,7 @@ class DeprecatedEstimationProcessor:
         N = self.simulator_concentrations.shape[1]
         hypotheses = np.squeeze(self.simulator_concentrations[:, N - maxlen :])
 
-        corr1 = services.MultiMetricCorrelation(
+        corr1 = services.correlation.MultiMetricCorrelation(
             reference=reference,
             hypotheses=hypotheses,
             verbose=self.verbose,
@@ -122,7 +123,9 @@ class DeprecatedEstimationProcessor:
             corr1.all_exceed_sigma_squared(),
             ("mi", "dtw", "mpdist"),
         )
+
         print("All metrics exceed sigma-squared ? {}".format(result_tracker))
+
         if not result_tracker[0]:
             result_tracker = corr1.consensus_exceed_sigma_squared()
             print(
@@ -140,29 +143,66 @@ class DeprecatedEstimationProcessor:
             for method_id in result_tracker[1]:
                 corrmat[method_id] += 1
                 leak_mat[0, local_leak_mat[method_id]] += 1
-            result = EstimationSummary(
-                result=EstimationResult.CONFIRMED,
-                confidence=np.float64(Q),
-                leakage_index=leak_index,
+            return EstimationSummaryUncommited(
+                **{
+                    "result": EstimationResult.CONFIRMED,
+                    "confidence": float(Q),
+                    "leakage_index": leak_index,
+                    "simulation_detection_rate_ids": self._detection_rates_ids,
+                }
             )
         else:
             if self.anomaly_severity == AnomalyDeviation.CRITICAL:
-                result = EstimationSummary(
-                    result=EstimationResult.EXTERNAL_CAUSE,
-                    confidence=np.float64(1.0),
-                    leakage_index=-1,
+                return EstimationSummaryUncommited(
+                    **{
+                        "result": EstimationResult.EXTERNAL_CAUSE,
+                        "confidence": 1.0,
+                        "leakage_index": -1,
+                        "simulation_detection_rate_ids": (
+                            self._detection_rates_ids
+                        ),
+                    }
                 )
             else:
-                result = EstimationSummary(
-                    result=EstimationResult.ABSENT,
-                    confidence=np.float64(
-                        np.float64(1.0)
-                        - np.float64(corr1.range_check())  # type: ignore
-                    ),
-                    leakage_index=-1,
+                return EstimationSummaryUncommited(
+                    **{
+                        "result": EstimationResult.ABSENT,
+                        "confidence": float(
+                            np.float64(1.0)
+                            - np.float64(corr1.range_check())  # type: ignore
+                        ),
+                        "leakage_index": -1,
+                        "simulation_detection_rate_ids": (
+                            self._detection_rates_ids
+                        ),
+                    }
                 )
 
-        return result
+
+def log_estimation(
+    estimation_summary: EstimationSummary,
+    tag_info: TagInfo,
+    anomaly_timestamps: list[str],
+):
+    if estimation_summary.result == EstimationResult.EXTERNAL_CAUSE:
+        logger.debug(
+            "Detected high gas concentrations at "
+            f"{anomaly_timestamps[-1]} (sensor {tag_info.sensor_number})."  # noqa
+            "Concentration levels are cause by reasons "
+            "other than the expected leak points."
+        )
+    elif estimation_summary.result == EstimationResult.CONFIRMED:
+        logger.debug(
+            "Detected leak for anomaly at "
+            f"{anomaly_timestamps[-1]} of sensor {tag_info.sensor_number} "  # noqa
+            f"at leak position {estimation_summary.leakage_index} "  # noqa
+            f"(confidence: {estimation_summary.confidence})."
+        )
+    else:  # LeakResponseType.LEAK_ABSENT
+        logger.debug(
+            "Elevated gas levels at sensor "
+            f"{tag_info.sensor_number} are not crucial."  # noqa
+        )
 
 
 async def process():
@@ -190,6 +230,8 @@ async def process():
     # Consume and process simulations for the estimation
     # -------------------------------------------------------------------------
     async for detection_rates in simulation_detection_rates.consume():
+        logger.debug(f"Estimation processing for {detection_rates}")
+
         try:
             # If there is no detection_rates in consumed instance
             # just skip this one
@@ -249,10 +291,7 @@ async def process():
                 [tsd.ppmv for tsd in last_time_series_data]
             ),
             anomaly_timestamps=anomaly_timestamps,
-            detection_rates=np.array(
-                [detection.rate for detection in detection_rates],
-                dtype=np.float64,
-            ),
+            detection_rates=detection_rates,
             simulator_concentrations=np.array(
                 [detection.concentrations for detection in detection_rates]
             ),
@@ -262,33 +301,19 @@ async def process():
         try:
             # NOTE: Currently we do not care about this processor that much,
             #       so all errors are handled
-            leak_estimation_result: EstimationSummary = (
+            estimation_summary_uncommited: EstimationSummaryUncommited = (
                 estimation_processor.process()
             )
-        except BaseError as error:
+        except Exception as error:
             logger.error(error)
             continue
 
-        # Define the event type and log message
-        # base on the estimation result
-        if leak_estimation_result.result == EstimationResult.EXTERNAL_CAUSE:
-            logmsg = (
-                "Detected high gas concentrations at "
-                f"{anomaly_timestamps[-1]} (sensor {tag_info.sensor_number})."  # noqa
-                "Concentration levels are cause by reasons "
-                "other than the expected leak points."
-            )
-        elif leak_estimation_result.result == EstimationResult.CONFIRMED:
-            logmsg = (
-                "Detected leak for anomaly at "
-                f"{anomaly_timestamps[-1]} of sensor {tag_info.sensor_number} "  # noqa
-                f"at leak position {leak_estimation_result.leakage_index} "  # noqa
-                f"(confidence: {leak_estimation_result.confidence})."
-            )
-        else:  # LeakResponseType.LEAK_ABSENT
-            logmsg = (
-                "Elevated gas levels at sensor "
-                f"{tag_info.sensor_number} are not crucial."  # noqa
-            )
+        esimation_summary: EstimationSummary = await services.save(
+            estimation_summary_uncommited
+        )
 
-        logger.debug(logmsg)
+        log_estimation(
+            estimation_summary=esimation_summary,
+            tag_info=tag_info,
+            anomaly_timestamps=anomaly_timestamps,
+        )
