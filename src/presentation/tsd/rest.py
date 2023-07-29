@@ -24,7 +24,8 @@ async def time_series_data(ws: WebSocket, sensor_id: int):
 
     await ws.accept()
     logger.success(
-        f"Opening WS connection for TSD fetching from sensor: {sensor_id}"
+        "Opening WS connection for Estimation results fetching "
+        f"from sensor: {sensor_id}"
     )
 
     historical_tsd_set: list[TsdPublic] = [
