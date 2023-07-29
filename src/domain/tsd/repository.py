@@ -52,8 +52,6 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
 
         return TsdInDb.from_orm(_schema)
 
-    # async def filter(self, attr)
-
     async def by_sensor(self, sensor_id: int) -> AsyncGenerator[TsdInDb, None]:
         """Fetch all time series data by sensor from database.
         The sensor table is joined.
