@@ -21,6 +21,7 @@ __all__ = (
     "TimeSeriesDataTable",
     "AnomalyDetectionsTable",
     "SimulationDetectionRatesTable",
+    "EstimationsSummariesTable",
     "EventsTable",
 )
 
@@ -174,6 +175,17 @@ class SimulationDetectionRatesTable(Base):
         uselist=False,
         back_populates="simulation_detection_rates",
     )
+
+
+class EstimationsSummariesTable(Base):
+    __tablename__ = "estimations_summaries"
+
+    result: str = Column(String, nullable=False)  # type: ignore
+    confidence: float = Column(Float, nullable=False)  # type: ignore
+    leakage_index: int = Column(Integer, nullable=False)  # type: ignore
+    simulation_detection_rate_ids: str = Column(
+        String, nullable=False
+    )  # type: ignore[var-annotated]
 
 
 class EventsTable(Base):
