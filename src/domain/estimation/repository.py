@@ -1,3 +1,5 @@
+from typing import AsyncGenerator
+
 from sqlalchemy import Result, Select, select
 
 from src.domain.estimation.models import (
@@ -49,3 +51,20 @@ class EstimationsSummariesRepository(
         )
 
         return await self.get(id_=_schema.id)
+
+    async def by_sensor(
+        self, sensor_id: int
+    ) -> AsyncGenerator[EstimationSummary, None]:
+        """Fetch all anomaly detections for the sensor."""
+
+        query: Select = select(self.schema_class).where(
+            getattr(self.schema_class, "sensor_id") == sensor_id
+        )
+
+        result: Result = await self._session.execute(query)
+
+        if not (schemas := result.scalars().all()):
+            raise NotFoundError
+
+        for schema in schemas:
+            yield EstimationSummary.from_orm(schema)

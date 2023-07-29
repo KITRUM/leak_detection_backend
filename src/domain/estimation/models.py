@@ -12,6 +12,7 @@ __all__ = (
 )
 
 
+# TODO: Replace naming with the EstimationSummary
 class EstimationResult(StrEnum):
     """Represent possible estimation result values."""
 
@@ -24,6 +25,7 @@ class EstimationResult(StrEnum):
 class _EstimationSummaryBase(InternalModel):
     result: EstimationResult
     leakage_index: int
+    sensor_id: int
 
 
 class EstimationSummaryUncommited(_EstimationSummaryBase):

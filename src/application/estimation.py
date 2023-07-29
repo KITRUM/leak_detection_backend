@@ -149,6 +149,7 @@ class DeprecatedEstimationProcessor:
                     "confidence": float(Q),
                     "leakage_index": leak_index,
                     "simulation_detection_rate_ids": self._detection_rates_ids,
+                    "sensor_id": self.sensor_id,
                 }
             )
         else:
@@ -161,6 +162,7 @@ class DeprecatedEstimationProcessor:
                         "simulation_detection_rate_ids": (
                             self._detection_rates_ids
                         ),
+                        "sensor_id": self.sensor_id,
                     }
                 )
             else:
@@ -175,6 +177,7 @@ class DeprecatedEstimationProcessor:
                         "simulation_detection_rate_ids": (
                             self._detection_rates_ids
                         ),
+                        "sensor_id": self.sensor_id,
                     }
                 )
 
@@ -225,6 +228,8 @@ async def process():
     platform: Platform | None = None
 
     simulation_detection_rates = data_lake.simulation_detection_rates  # alias
+
+    logger.success(f"Background estimation processing")
 
     # -------------------------------------------------------------------------
     # Consume and process simulations for the estimation
@@ -308,12 +313,17 @@ async def process():
             logger.error(error)
             continue
 
-        esimation_summary: EstimationSummary = await services.save(
+        estimation_summary: EstimationSummary = await services.save(
             estimation_summary_uncommited
         )
 
+        # Update the data lake for websocket connections
+        data_lake.estimation_summary_set_by_sensor[
+            time_series_data.sensor.id
+        ].storage.append(estimation_summary)
+
         log_estimation(
-            estimation_summary=esimation_summary,
+            estimation_summary=estimation_summary,
             tag_info=tag_info,
             anomaly_timestamps=anomaly_timestamps,
         )

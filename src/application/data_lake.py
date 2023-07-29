@@ -15,7 +15,8 @@ from typing import AsyncGenerator, Deque, Generic, TypeVar
 
 from src.config import settings
 from src.domain.anomaly_detection import AnomalyDetection
-from src.domain.simulation.models import SimulationDetectionRateInDb
+from src.domain.estimation import EstimationSummary
+from src.domain.simulation import SimulationDetectionRateInDb
 from src.domain.tsd import Tsd
 
 T = TypeVar("T")
@@ -72,6 +73,7 @@ class DataLake:
     # Storage for reducing the database usage. Used for background processing
     # Stored by anomaly id
     simulation_detection_rates: LakeItem[list[SimulationDetectionRateInDb]]
+    estimation_summary_set_by_sensor: dict[int, LakeItem[EstimationSummary]]
 
 
 # TODO: Add limits
@@ -84,4 +86,7 @@ data_lake = DataLake(
         partial(LakeItem[AnomalyDetection])
     ),
     simulation_detection_rates=LakeItem[list[SimulationDetectionRateInDb]](),
+    estimation_summary_set_by_sensor=defaultdict(
+        partial(LakeItem[EstimationSummary])
+    ),
 )
