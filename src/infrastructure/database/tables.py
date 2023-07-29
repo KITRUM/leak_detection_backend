@@ -22,7 +22,8 @@ __all__ = (
     "AnomalyDetectionsTable",
     "SimulationDetectionRatesTable",
     "EstimationsSummariesTable",
-    "EventsTable",
+    "TemplatesEventsTable",
+    "SensorsEventsTable",
 )
 
 meta = MetaData(
@@ -88,7 +89,7 @@ class TemplatesTable(Base):
     platform_id: int = Column(Integer, nullable=False)  # type: ignore
 
     sensors = relationship("SensorsTable", back_populates="template")
-    events = relationship("EventsTable", back_populates="template")
+    events = relationship("TemplatesEventsTable", back_populates="template")
 
 
 class SensorsTable(Base):
@@ -113,6 +114,7 @@ class SensorsTable(Base):
     estimation_summary_set = relationship(
         "EstimationsSummariesTable", back_populates="sensor"
     )
+    events = relationship("SensorsEventsTable", back_populates="sensor")
 
 
 class TimeSeriesDataTable(Base):
@@ -198,11 +200,10 @@ class EstimationsSummariesTable(Base):
     )
 
 
-class EventsTable(Base):
-    __tablename__ = "events"
+class TemplatesEventsTable(Base):
+    __tablename__ = "templates_events"
 
-    type_: str = Column(String, nullable=False)  # type: ignore
-    message: str = Column(String, nullable=False)  # type: ignore
+    type: str = Column(String, nullable=False)  # type: ignore
 
     template_id: int = Column(
         ForeignKey(TemplatesTable.id),
@@ -211,4 +212,19 @@ class EventsTable(Base):
 
     template = relationship(
         "TemplatesTable", uselist=False, back_populates="events"
+    )
+
+
+class SensorsEventsTable(Base):
+    __tablename__ = "sensors_events"
+
+    type: str = Column(String, nullable=False)  # type: ignore
+
+    sensor_id: int = Column(
+        ForeignKey(SensorsTable.id),
+        nullable=False,
+    )  # type: ignore[var-annotated]
+
+    sensor = relationship(
+        "SensorsTable", uselist=False, back_populates="events"
     )
