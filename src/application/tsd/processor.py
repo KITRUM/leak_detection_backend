@@ -29,6 +29,8 @@ async def _mock_process_time_series_data(sensor):
 
     # Get the raw string from the CSV file and parse is to the internal model
     async for row in mock.read_from_csv_file(sensor):
+        logger.debug(f"TSD processing for {sensor.id}")
+
         if not row:
             continue
 

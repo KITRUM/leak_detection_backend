@@ -4,6 +4,7 @@ of the simulation processing that producing the detection rates
 """
 
 import numpy as np
+from loguru import logger
 from numpy.typing import NDArray
 
 from src.application.data_lake import data_lake
@@ -156,6 +157,7 @@ async def process():
     # )
 
     async for anomaly_detection in data_lake.anomaly_detections.consume():
+        logger.debug(f"Simulation processing for {anomaly_detection.id}")
         sensor: Sensor = await SensorsRepository().get(
             anomaly_detection.time_series_data.sensor_id
         )

@@ -8,6 +8,8 @@ It depends on:
     - anomaly deviation calculation logic
 """
 
+from loguru import logger
+
 from src.application.data_lake import data_lake
 from src.domain.anomaly_detection import (
     AnomalyDetection,
@@ -23,6 +25,7 @@ async def process():
     """
 
     async for tsd in data_lake.time_series_data.consume():  # type is Tsd
+        logger.debug(f"Anomaly detection processing: {tsd.id}")
         create_schema: AnomalyDetectionUncommited = services.process(tsd)
 
         # Save a detection to the database
