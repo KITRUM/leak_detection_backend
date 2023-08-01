@@ -61,14 +61,14 @@ class DataLake:
 
     # Storage for reducing the database usage. Uses for background processing
     time_series_data: LakeItem[Tsd]
-
     # Storage for reducing the database usage. Uses by websocket connection
     time_series_data_by_sensor: dict[int, LakeItem[Tsd]]
 
-    # Storage for reducing the database usage. Uses for background processing
-    anomaly_detections: LakeItem[AnomalyDetection]
-
-    # Storage for reducing the database usage. Uses by websocket connection
+    # Uses for background processing by simulation processing
+    anomaly_detections_for_simulation: LakeItem[AnomalyDetection]
+    # Uses for background processing by sensors events engine
+    anomaly_detections_for_events: LakeItem[AnomalyDetection]
+    # Uses by websocket connection
     anomaly_detections_by_sensor: dict[int, LakeItem[AnomalyDetection]]
 
     # Storage for reducing the database usage. Uses for background processing
@@ -78,8 +78,8 @@ class DataLake:
     estimation_summary_set_by_sensor: dict[int, LakeItem[EstimationSummary]]
 
     # Events
-    sensors_events: dict[int, LakeItem[sensors.Event]]
-    templates_events: dict[int, LakeItem[templates.Event]]
+    events_by_sensor: dict[int, LakeItem[sensors.Event]]
+    events_by_template: dict[int, LakeItem[templates.Event]]
 
 
 # TODO: Add more limits
@@ -87,14 +87,23 @@ class DataLake:
 data_lake = DataLake(
     time_series_data=LakeItem[Tsd](),
     time_series_data_by_sensor=defaultdict(partial(LakeItem[Tsd])),
-    anomaly_detections=LakeItem[AnomalyDetection](),
+    # Anomaly detection
+    anomaly_detections_for_simulation=LakeItem[AnomalyDetection](limit=10),
+    anomaly_detections_for_events=LakeItem[AnomalyDetection](),
     anomaly_detections_by_sensor=defaultdict(
         partial(LakeItem[AnomalyDetection])
     ),
-    simulation_detection_rates=LakeItem[list[SimulationDetectionRateInDb]](),
-    estimation_summary_set_by_sensor=defaultdict(
-        partial(LakeItem[EstimationSummary])
+    # Simulation
+    simulation_detection_rates=LakeItem[list[SimulationDetectionRateInDb]](
+        limit=10
     ),
-    sensors_events=defaultdict(partial(LakeItem[sensors.Event], limit=3)),
-    templates_events=defaultdict(partial(LakeItem[templates.Event], limit=3)),
+    # Estimation
+    estimation_summary_set_by_sensor=defaultdict(
+        partial(LakeItem[EstimationSummary], limit=10)
+    ),
+    # Events
+    events_by_sensor=defaultdict(partial(LakeItem[sensors.Event], limit=3)),
+    events_by_template=defaultdict(
+        partial(LakeItem[templates.Event], limit=3)
+    ),
 )

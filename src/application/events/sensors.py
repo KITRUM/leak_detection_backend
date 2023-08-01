@@ -1,4 +1,7 @@
-from contextvars import ContextVar
+from collections import defaultdict, deque
+from contextlib import suppress
+from functools import partial
+from typing import Deque
 
 from src.application.data_lake import data_lake
 from src.domain.anomaly_detection import AnomalyDetection, AnomalyDeviation
@@ -8,14 +11,17 @@ from src.domain.events.sensors import (
     EventUncommited,
     services,
 )
+from src.domain.events.sensors.models import (
+    ANOMALY_DEVIATION_TO_EVENT_TYPE_MAPPING,
+)
 from src.infrastructure.errors.base import BaseError
 
-CTX_LAST_ANOMALY_DETECTION: ContextVar[AnomalyDetection | None] = ContextVar(
-    "last_anomaly_detection", default=None
+LAST_SENSORS_EVENTS_TYPES: dict[int, Deque[EventType]] = defaultdict(
+    partial(deque, maxlen=3)
 )
 
 
-async def process(anomaly_detection: AnomalyDetection):
+async def process(anomaly_detection: AnomalyDetection) -> Event | None:
     """This function represents the engine of producing events
     that are related to the specific sensor.
 
@@ -23,38 +29,38 @@ async def process(anomaly_detection: AnomalyDetection):
         Might be that it should be changed to the Estimation results.
     """
 
-    _last_anomaly_detection: AnomalyDetection | None = (
-        CTX_LAST_ANOMALY_DETECTION.get()
-    )
+    sensor_id: int = anomaly_detection.time_series_data.sensor_id
 
-    if (
-        _last_anomaly_detection
-        and anomaly_detection.value == _last_anomaly_detection.value
-    ):
-        return
-
-    # Update the last anomaly detection context with the new one
-    # if a new one DOES NOT match it
-    CTX_LAST_ANOMALY_DETECTION.set(anomaly_detection)
+    with suppress(IndexError):
+        _last_sensor_event_type = LAST_SENSORS_EVENTS_TYPES[sensor_id][-1]
+        if (
+            ANOMALY_DEVIATION_TO_EVENT_TYPE_MAPPING.get(
+                anomaly_detection.value
+            )
+            == _last_sensor_event_type
+        ):
+            return None
 
     # Build the event base on the anomaly deviation
     match anomaly_detection.value:
         case AnomalyDeviation.CRITICAL:
             create_schema: EventUncommited = EventUncommited(
-                type=EventType.CRITICAL,
-                sensor_id=anomaly_detection.time_series_data.sensor_id,
+                type=EventType.CRITICAL, sensor_id=sensor_id
             )
-        case AnomalyDeviation.CRITICAL:
+        case AnomalyDeviation.OK:
             create_schema: EventUncommited = EventUncommited(
-                type=EventType.CRITICAL,
-                sensor_id=anomaly_detection.time_series_data.sensor_id,
+                type=EventType.OK, sensor_id=sensor_id
             )
         case _:
             raise BaseError(message="Unsupported event operation")
 
     event: Event = await services.create(create_schema)
 
+    # Update the last event type context with the new one
+    # if a new one DOES NOT match it
+    LAST_SENSORS_EVENTS_TYPES[event.sensor.id].append(event.type)
+
     # Update the data lake
-    data_lake.sensors_events[
-        anomaly_detection.time_series_data.sensor_id
-    ].storage.append(event)
+    data_lake.events_by_sensor[event.sensor.id].storage.append(event)
+
+    return event

@@ -5,9 +5,10 @@ from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
 from src.application.data_lake import data_lake
+from src.config import settings
 from src.domain.estimation import services as estimation_services
 from src.infrastructure.contracts import Response, ResponseMulti
-from src.infrastructure.errors.base import NotFoundError
+from src.infrastructure.errors.base import NotFoundError, UnprocessableError
 
 from .contracts import EstimationSummaryPublic
 
@@ -28,6 +29,14 @@ async def estimation_summary(ws: WebSocket, sensor_id: int):
         domain expert to finish it completely.
         Might works unexpected.
     """
+
+    if settings.simulation.turn_on is False:
+        raise UnprocessableError(
+            message=(
+                "Since the simulation is turned off "
+                "this endpoint can not be used"
+            )
+        )
 
     await ws.accept()
     logger.success(

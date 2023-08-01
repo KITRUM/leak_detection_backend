@@ -10,7 +10,6 @@ It depends on:
 
 from loguru import logger
 
-from src.application import events
 from src.application.data_lake import data_lake
 from src.domain.anomaly_detection import (
     AnomalyDetection,
@@ -38,10 +37,12 @@ async def process():
         )
 
         # Update the data lake
-        data_lake.anomaly_detections.storage.append(anomaly_detection)
+        data_lake.anomaly_detections_for_simulation.storage.append(
+            anomaly_detection
+        )
+        data_lake.anomaly_detections_for_events.storage.append(
+            anomaly_detection
+        )
         data_lake.anomaly_detections_by_sensor[tsd.sensor.id].storage.append(
             anomaly_detection
         )
-
-        # Handle the event
-        await events.sensors.process(anomaly_detection)

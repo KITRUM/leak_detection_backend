@@ -1,5 +1,6 @@
 from enum import StrEnum, auto
 
+from src.domain.anomaly_detection import AnomalyDeviation
 from src.domain.sensors import SensorInDb
 from src.infrastructure.models import InternalModel
 
@@ -8,6 +9,7 @@ __all__ = (
     "EventUncommited",
     "EventInDb",
     "Event",
+    "ANOMALY_DEVIATION_TO_EVENT_TYPE_MAPPING",
 )
 
 
@@ -36,3 +38,10 @@ class Event(InternalModel):
     id: int
     type: EventType
     sensor: SensorInDb
+
+
+ANOMALY_DEVIATION_TO_EVENT_TYPE_MAPPING: dict[AnomalyDeviation, EventType] = {
+    AnomalyDeviation.CRITICAL: EventType.CRITICAL,
+    AnomalyDeviation.WARNING: EventType.OK,
+    AnomalyDeviation.OK: EventType.OK,
+}
