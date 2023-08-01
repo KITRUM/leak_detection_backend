@@ -2,4 +2,4 @@
 The operating layer of events processing.
 """
 
-from . import sensors, templates
+from .processor import *  # noqa: F401, F403

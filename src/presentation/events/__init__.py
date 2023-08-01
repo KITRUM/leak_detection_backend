@@ -1,1 +1,1 @@
-from src.presentation.events import sensors  # noqa: F401
+from src.presentation.events import sensors, templates  # noqa: F401

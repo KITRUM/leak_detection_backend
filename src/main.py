@@ -34,6 +34,7 @@ if settings.debug is True:
     shutdown_tasks.append(domain.simulation.services.delete_all)
     shutdown_tasks.append(domain.estimation.services.delete_all)
     shutdown_tasks.append(domain.events.sensors.services.delete_all)
+    shutdown_tasks.append(domain.events.templates.services.delete_all)
 
 
 # Adjust the application
@@ -47,12 +48,14 @@ app: FastAPI = application_factory(
         presentation.anomaly_detection.router,
         presentation.estimation.router,
         presentation.events.sensors.router,
+        presentation.events.templates.router,
     ),
     startup_tasks=[
         application.tsd.process_for_existed_sensors,
         application.anomaly_detection.process,
         application.simulation.process,
         application.estimation.process,
+        application.events.process,
     ],
     shutdown_tasks=shutdown_tasks,
 )

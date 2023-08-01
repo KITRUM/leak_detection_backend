@@ -5,23 +5,24 @@ from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
 from src.application.data_lake import data_lake
-from src.domain.events.sensors import services as events_services
-from src.infrastructure.contracts import Response, ResponseMulti
+from src.domain.events.templates import services as events_services
+from src.infrastructure.contracts import Response
+from src.infrastructure.contracts.response import ResponseMulti
 from src.infrastructure.errors import NotFoundError
 
 from .contracts import EventPublic
 
 __all__ = ("router",)
 
-router = APIRouter(prefix="/sensors")
+router = APIRouter(prefix="/templates")
 
 
-@router.websocket("/{sensor_id}/events")
-async def sensor_events(ws: WebSocket, sensor_id: int):
+@router.websocket("/{template_id}/events")
+async def sensor_events(ws: WebSocket, template_id: int):
     await ws.accept()
     logger.success(
         "Opening WS connection for events fetching "
-        f"from sensor: {sensor_id}"
+        f"from template: {template_id}"
     )
 
     # Just skip if there is no historical data in the database
@@ -30,10 +31,10 @@ async def sensor_events(ws: WebSocket, sensor_id: int):
             EventPublic(
                 id=instance.id,
                 type=instance.type,
-                sensor_id=instance.sensor.id,
+                template_id=instance.template.id,
             )
             for instance in (
-                await events_services.get_historical_data(sensor_id)
+                await events_services.get_historical_data(template_id)
             )
         ]
 
@@ -46,12 +47,12 @@ async def sensor_events(ws: WebSocket, sensor_id: int):
         await ws.send_json(historical_response.encoded_dict())
 
     # Run the infinite consuming of new anomaly detection data
-    async for instance in data_lake.events_by_sensor[sensor_id].consume():
+    async for instance in data_lake.events_by_template[template_id].consume():
         response = Response[EventPublic](
             result=EventPublic(
                 id=instance.id,
                 type=instance.type,
-                sensor_id=instance.sensor.id,
+                template_id=instance.template.id,
             )
         )
 
@@ -59,6 +60,6 @@ async def sensor_events(ws: WebSocket, sensor_id: int):
             await ws.send_json(response.encoded_dict())
         except ConnectionClosed:
             logger.info(
-                f"Websocket events connection closed for sensor: {sensor_id}"
+                f"Websocket events connection closed for sensor: {template_id}"
             )
             break

@@ -115,9 +115,6 @@ def process(tsd: Tsd) -> AnomalyDetectionUncommited:
     else:
         deviation = AnomalyDeviation.CRITICAL
 
-    # TODO: Remove this line
-    deviation = AnomalyDeviation.CRITICAL
-
     create_schema = AnomalyDetectionUncommited(
         value=deviation, time_series_data_id=tsd.id
     )
