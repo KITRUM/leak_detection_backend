@@ -36,7 +36,7 @@ class TsdInDb(TsdUncommited):
     id: int
 
     @validator("ppmv", pre=True)
-    def convert_ppmv(cls, value: float | np.float64) -> np.float32:
+    def convert_ppmv(cls, value: float | np.float64) -> np.float64:
         if type(value) == np.float64:
             return value
 
@@ -51,7 +51,7 @@ class Tsd(TsdRaw, InternalModel):
     sensor: SensorInDb
 
     @validator("ppmv", pre=True)
-    def convert_ppmv(cls, value: float | np.float64) -> np.float32:
+    def convert_ppmv(cls, value: float | np.float64) -> np.float64:
         if type(value) == np.float64:
             return value
 
