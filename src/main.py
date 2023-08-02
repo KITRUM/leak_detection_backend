@@ -4,6 +4,7 @@ from loguru import logger
 from src import application, domain, presentation
 from src.config import settings
 from src.infrastructure.application import create as application_factory
+from src.infrastructure.application import middlewares
 
 # Adjust the logging
 # -------------------------------
@@ -29,18 +30,22 @@ logger.add(
 shutdown_tasks = []
 
 if settings.debug is True:
-    shutdown_tasks.append(domain.anomaly_detection.services.delete_all)
-    shutdown_tasks.append(domain.tsd.services.delete_all)
-    shutdown_tasks.append(domain.simulation.services.delete_all)
-    shutdown_tasks.append(domain.estimation.services.delete_all)
-    shutdown_tasks.append(domain.events.sensors.services.delete_all)
-    shutdown_tasks.append(domain.events.templates.services.delete_all)
-
+    shutdown_tasks.extend(
+        [
+            domain.anomaly_detection.services.delete_all,
+            domain.tsd.services.delete_all,
+            domain.simulation.services.delete_all,
+            domain.estimation.services.delete_all,
+            domain.events.sensors.services.delete_all,
+            domain.events.templates.services.delete_all,
+        ]
+    )
 
 # Adjust the application
 # -------------------------------
 app: FastAPI = application_factory(
     debug=settings.debug,
+    middlewares=[],
     routers=(
         presentation.templates.router,
         presentation.sensors.router,
