@@ -10,6 +10,7 @@ from src.infrastructure.database import AnomalyDetectionsTable
 from src.infrastructure.database.services.transaction import transaction
 
 from .constants import INITIAL_BASELINE_HIGH, INITIAL_BASELINE_LOW
+from .feedback_mode_processor import sensor_stream
 from .models import (
     AnomalyDetection,
     AnomalyDetectionUncommited,
@@ -87,6 +88,10 @@ def update_matrix_profile(matrix_profile: MatrixProfile, tsd: Tsd) -> None:
     matrix_profile.baseline.update(tsd.ppmv)
     matrix_profile.counter += 1
     matrix_profile.last_values.append(tsd.ppmv)
+
+
+def feedback_mode_processing(tsd: Tsd) -> AnomalyDetectionUncommited:
+    pass
 
 
 def process(tsd: Tsd) -> AnomalyDetectionUncommited:
