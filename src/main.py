@@ -45,7 +45,9 @@ if settings.debug is True:
 # -------------------------------
 app: FastAPI = application_factory(
     debug=settings.debug,
-    middlewares=[],
+    middlewares=[
+        middlewares.cors,
+    ],
     routers=(
         presentation.templates.router,
         presentation.sensors.router,
