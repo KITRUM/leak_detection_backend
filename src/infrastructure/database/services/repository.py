@@ -61,7 +61,7 @@ class BaseRepository(Session, Generic[ConcreteTable]):  # type: ignore
         await self._session.flush()
 
         if not (schema := result.scalar_one_or_none()):
-            raise DatabaseError
+            raise NotFoundError
 
         return schema
 

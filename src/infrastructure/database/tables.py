@@ -3,6 +3,7 @@ from typing import TypeVar
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     Column,
     DateTime,
     Float,
@@ -17,6 +18,7 @@ __all__ = (
     "Base",
     "ConcreteTable",
     "TemplatesTable",
+    "SensorsConfigurationsTable",
     "SensorsTable",
     "TimeSeriesDataTable",
     "AnomalyDetectionsTable",
@@ -92,6 +94,18 @@ class TemplatesTable(Base):
     events = relationship("TemplatesEventsTable", back_populates="template")
 
 
+class SensorsConfigurationsTable(Base):
+    __tablename__ = "sensors_configurations"
+
+    interactive_feedback_mode: bool = Column(
+        Boolean, nullable=False, default=False
+    )  # type: ignore[var-annotated]
+
+    sensor = relationship(
+        "SensorsTable", uselist=False, back_populates="configuration"
+    )
+
+
 class SensorsTable(Base):
     __tablename__ = "sensors"
 
@@ -100,14 +114,22 @@ class SensorsTable(Base):
     y: float = Column(Float, nullable=False)  # type: ignore
     z: float = Column(Float, nullable=False)  # type: ignore
 
+    configuration_id: int = Column(
+        ForeignKey(SensorsConfigurationsTable.id),
+        nullable=False,
+    )  # type: ignore[var-annotated]
+    configuration = relationship(
+        "SensorsConfigurationsTable", back_populates="sensor"
+    )
+
     template_id: int = Column(
         ForeignKey(TemplatesTable.id),
         nullable=False,
     )  # type: ignore[var-annotated]
-
     template = relationship(
         "TemplatesTable", uselist=False, back_populates="sensors"
     )
+
     time_series_data = relationship(
         "TimeSeriesDataTable", back_populates="sensor"
     )
@@ -144,6 +166,11 @@ class AnomalyDetectionsTable(Base):
     __tablename__ = "anomaly_detections"
 
     value: str = Column(String, nullable=False)  # type: ignore[var-annotated]
+    interactive_feedback_mode: bool = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )  # type: ignore[var-annotated]
 
     time_series_data_id: int = Column(
         ForeignKey(TimeSeriesDataTable.id),

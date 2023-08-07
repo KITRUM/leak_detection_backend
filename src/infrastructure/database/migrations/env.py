@@ -7,15 +7,18 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from src.config import settings
-from src.infrastructure.database.tables import (  # noqa: F401
-    AnomalyDetectionsTable,
-    Base,
-    SensorsEventsTable,
-    SensorsTable,
-    TemplatesEventsTable,
-    TemplatesTable,
-    TimeSeriesDataTable,
-)
+from src.infrastructure.database.tables import *  # noqa: F401, F403
+
+# TODO: Remove if redundant
+# AnomalyDetectionsTable,
+# Base,
+# SensorsConfigurationsTable,
+# SensorsEventsTable,
+# SensorsTable,
+# TemplatesEventsTable,
+# TemplatesTable,
+# TimeSeriesDataTable,
+# )
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
