@@ -14,7 +14,19 @@ class SensorCreateRequestBody(PublicModel):
     z: float = Field(description="The z position of the sensor")
 
 
+class SensorConfigurationPublic(PublicModel):
+    interactive_feedback_mode: bool = Field(
+        description=(
+            "This field reflects if the sensor works "
+            "in the interactive feedback mode."
+        ),
+    )
+
+
 class SensorPublic(SensorCreateRequestBody):
     """The public sensor data model."""
 
     id: int
+    configuration: SensorConfigurationPublic = Field(
+        description="The configuration of the sensor"
+    )

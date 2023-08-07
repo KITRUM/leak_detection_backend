@@ -4,7 +4,11 @@ from sqlalchemy import Result, Select, desc, select
 from sqlalchemy.orm import joinedload
 
 from src.domain.tsd.models import Tsd, TsdInDb, TsdUncommited
-from src.infrastructure.database import BaseRepository, TimeSeriesDataTable
+from src.infrastructure.database import (
+    BaseRepository,
+    SensorsTable,
+    TimeSeriesDataTable,
+)
 from src.infrastructure.errors import NotFoundError
 
 all = ("SensorsRepository",)
@@ -33,7 +37,10 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
             select(self.schema_class)
             .where(getattr(self.schema_class, "id") == id_)
             .options(
-                joinedload(self.schema_class.sensor),
+                joinedload(self.schema_class.sensor).options(
+                    joinedload(SensorsTable.template),
+                    joinedload(SensorsTable.configuration),
+                ),
             )
         )
         result: Result = await self._session.execute(query)
