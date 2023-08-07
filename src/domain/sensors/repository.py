@@ -3,11 +3,61 @@ from typing import AsyncGenerator
 from sqlalchemy import Result, Select, select
 from sqlalchemy.orm import joinedload
 
-from src.domain.sensors.models import Sensor, SensorUncommited
-from src.infrastructure.database import BaseRepository, SensorsTable
+from src.domain.sensors.models import (
+    Sensor,
+    SensorConfigurationInDb,
+    SensorConfigurationUncommited,
+    SensorUncommited,
+)
+from src.infrastructure.database import (
+    BaseRepository,
+    SensorsConfigurationsTable,
+    SensorsTable,
+)
 from src.infrastructure.errors import NotFoundError
 
-all = ("SensorsRepository",)
+all = ("SensorsRepository", "SensorConfigurationRepository")
+
+
+class SensorsConfigurationsRepository(
+    BaseRepository[SensorsConfigurationsTable]
+):
+    schema_class = SensorsConfigurationsTable
+
+    async def update(
+        self, id_: int, schema: SensorConfigurationUncommited
+    ) -> SensorConfigurationInDb:
+        """Update the configuration by id."""
+
+        _schema = await self._update(
+            key="id", value=id_, payload=schema.dict()
+        )
+
+        return SensorConfigurationInDb.from_orm(_schema)
+
+    async def get(self, id_: int) -> SensorConfigurationInDb:
+        """Fetch the configuration by id."""
+
+        query: Select = select(self.schema_class).where(
+            getattr(self.schema_class, "id") == id_
+        )
+        result: Result = await self._session.execute(query)
+
+        if not (schema := result.scalars().one_or_none()):
+            raise NotFoundError
+
+        return SensorConfigurationInDb.from_orm(schema)
+
+    async def create(
+        self, schema: SensorConfigurationUncommited
+    ) -> SensorConfigurationInDb:
+        """Create a new record in database."""
+
+        _schema: SensorsConfigurationsTable = await self._save(
+            self.schema_class(**schema.dict())
+        )
+
+        return await self.get(id_=_schema.id)
 
 
 class SensorsRepository(BaseRepository[SensorsTable]):
@@ -21,6 +71,7 @@ class SensorsRepository(BaseRepository[SensorsTable]):
             .where(getattr(self.schema_class, "id") == id_)
             .options(
                 joinedload(self.schema_class.template),
+                joinedload(self.schema_class.configuration),
             )
         )
         result: Result = await self._session.execute(query)
@@ -44,7 +95,8 @@ class SensorsRepository(BaseRepository[SensorsTable]):
 
         result: Result = await self.execute(
             select(self.schema_class).options(
-                joinedload(self.schema_class.template)
+                joinedload(self.schema_class.template),
+                joinedload(self.schema_class.configuration),
             )
         )
         schemas = result.scalars().all()
@@ -64,6 +116,7 @@ class SensorsRepository(BaseRepository[SensorsTable]):
             .where(getattr(self.schema_class, "template_id") == template_id)
             .options(
                 joinedload(self.schema_class.template),
+                joinedload(self.schema_class.configuration),
             )
         )
         result: Result = await self._session.execute(query)

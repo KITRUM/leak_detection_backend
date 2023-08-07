@@ -5,12 +5,18 @@ from loguru import logger
 from sqlalchemy import delete
 from stumpy.aampi import aampi
 
+from src.config import settings
 from src.domain.tsd import Tsd
+from src.infrastructure.cache import Cache
 from src.infrastructure.database import AnomalyDetectionsTable
 from src.infrastructure.database.services.transaction import transaction
+from src.infrastructure.errors import NotFoundError, UnprocessableError
 
-from .constants import INITIAL_BASELINE_HIGH, INITIAL_BASELINE_LOW
-from .feedback_mode_processor import sensor_stream
+from .constants import (
+    INITIAL_BASELINE_HIGH,
+    INITIAL_BASELINE_LOW,
+    CacheNamespace,
+)
 from .models import (
     AnomalyDetection,
     AnomalyDetectionUncommited,
@@ -20,8 +26,7 @@ from .models import (
 )
 from .repository import AnomalyDetectionRepository
 
-# Temporary variable
-# TODO: Should be changed to the database later.
+# TODO: Should be moved to the infrastructure later.
 MATRIX_PROFILES: dict[int, MatrixProfile] = {}
 
 
@@ -90,25 +95,66 @@ def update_matrix_profile(matrix_profile: MatrixProfile, tsd: Tsd) -> None:
     matrix_profile.last_values.append(tsd.ppmv)
 
 
-def feedback_mode_processing(tsd: Tsd) -> AnomalyDetectionUncommited:
-    pass
+# ************************************************
+# ********** Processing **********
+# ************************************************
+# TODO: Update by removing fb_status
+def interactive_feedback_mode_processing(
+    matrix_profile: MatrixProfile, tsd: Tsd
+) -> AnomalyDetectionUncommited:
+    """The interactive feedback mode processing implementation."""
 
+    logger.success(
+        "The interactive feedback mode processing...\n"
+        f"{tsd.ppmv=}, {matrix_profile.counter}"
+    )
 
-def process(tsd: Tsd) -> AnomalyDetectionUncommited:
-    """The main anomaly detection processing entrypoint."""
+    matrix_profile.baseline.update(tsd.ppmv)
+    matrix_profile.last_values.append(tsd.ppmv)
+    matrix_profile.counter += 1
 
-    if not (matrix_profile := MATRIX_PROFILES.get(tsd.sensor.id)):
-        # Create default matrix profile if not exist
-        logger.success("Create the matrix profile")
-        baseline = copy_initial_baseline(level=MatrixProfileLevel.HIGH)
-        matrix_profile = MatrixProfile(
-            max_dis=np.float64(max(baseline.P_)),
-            baseline=baseline,
+    # The processing is skipped if not enough items in the matrix profile
+    if matrix_profile.counter < settings.anomaly_detection.window_size:
+        logger.info(
+            (
+                "Anomaly detection processing is skipped "
+                "due to not enough elements in the matrix profile. "
+                f"Current amount: {matrix_profile.counter}"
+            )
         )
-        MATRIX_PROFILES[tsd.sensor.id] = matrix_profile
+        raise UnprocessableError
 
-    # Update the matrix profile with new Time series data
+    dis = matrix_profile.fb_baseline.P_[-1:]
+    dis_lvl = dis / matrix_profile.fb_max_dis * 100
+
+    # Compare the distance with the edge value from matrix profile
+    if dis_lvl < matrix_profile.warning:
+        deviation = AnomalyDeviation.OK
+    elif dis_lvl >= matrix_profile.warning and dis_lvl < matrix_profile.alert:
+        deviation = AnomalyDeviation.WARNING
+    else:
+        deviation = AnomalyDeviation.CRITICAL
+
+    return AnomalyDetectionUncommited(
+        value=deviation, time_series_data_id=tsd.id
+    )
+
+
+def normal_mode_processing(
+    matrix_profile: MatrixProfile, tsd: Tsd
+) -> AnomalyDetectionUncommited:
     update_matrix_profile(matrix_profile, tsd)
+
+    # The processing is skipped if not enough items in the matrix profile
+    if matrix_profile.counter < settings.anomaly_detection.window_size:
+        logger.info(
+            (
+                "Anomaly detection processing is skipped "
+                "due to not enough elements in the matrix profile. "
+                f"Current amount: {matrix_profile.counter}"
+            )
+        )
+        raise UnprocessableError
 
     dis = matrix_profile.baseline.P_[-1:]
     dis_lvl = dis / matrix_profile.max_dis * 100
@@ -120,8 +166,109 @@ def process(tsd: Tsd) -> AnomalyDetectionUncommited:
     else:
         deviation = AnomalyDeviation.CRITICAL
 
-    create_schema = AnomalyDetectionUncommited(
+    return AnomalyDetectionUncommited(
         value=deviation, time_series_data_id=tsd.id
     )
 
-    return create_schema
+
+def _get_last_interactive_feedback_mode_turned_on(sensor_id: int) -> bool:
+    """Get last interactive feedback mode status from the cache.
+    If not exist - create a new record base on sensor id.
+    """
+
+    try:
+        return Cache.get(
+            namespace=(CacheNamespace.interactive_mode_turned_on),
+            key=sensor_id,
+        )
+    except NotFoundError:
+        Cache.set(
+            namespace="anomaly_detection_last_ifb_mode_turned_on",
+            key=sensor_id,
+            item=False,
+        )
+        return False
+
+
+def process(tsd: Tsd) -> AnomalyDetectionUncommited:
+    """The main anomaly detection processing entrypoint.
+
+    The flow:
+    ---------
+    1. Create or get the matrix profile for the specific sensor.
+    2. Get the last interactive feedback mode from the cache and compare to
+        the current in the sensor.configuration.
+    3. If last is True and current is False, then the last is changed to False
+        and the normal mode is used for processing.
+    4. If last is False and current is True, then the last is changed to True,
+        the matrix profile is updated/reset,
+        the interactive feedback mode is used for processing.
+    5. If last is True and current is True, then nothing is happening and
+        the interactive feedback mode is used for processing.
+    6. If last is False and current is False, then nothing is happening and
+        the normal mode is used for processing.
+    """
+
+    # Create default matrix profile if not exist
+    if not (matrix_profile := MATRIX_PROFILES.get(tsd.sensor.id)):
+        logger.success(
+            f"A new matrix profile is created for the sensor {tsd.sensor.id}"
+        )
+        baseline = copy_initial_baseline(level=MatrixProfileLevel.HIGH)
+        matrix_profile = MatrixProfile(
+            max_dis=np.float64(max(baseline.P_)),
+            baseline=baseline,
+            fb_max_dis=np.float64(max(baseline.P_)),
+            fb_baseline=baseline,
+            fb_baseline_start=baseline,
+        )
+        MATRIX_PROFILES[tsd.sensor.id] = matrix_profile
+
+    last_interactive_feedback_mode_turned_on: bool = (
+        _get_last_interactive_feedback_mode_turned_on(tsd.sensor.id)
+    )
+    current_interactive_feedback_mode_turned_on: bool = (
+        tsd.sensor.configuration.interactive_feedback_mode
+    )
+
+    if (
+        last_interactive_feedback_mode_turned_on is True
+        and current_interactive_feedback_mode_turned_on is False
+    ):
+        Cache.set(
+            namespace=CacheNamespace.interactive_mode_turned_on,
+            key=tsd.sensor.id,
+            item=False,
+        )
+        return normal_mode_processing(matrix_profile, tsd)
+
+    elif (
+        last_interactive_feedback_mode_turned_on is False
+        and current_interactive_feedback_mode_turned_on is True
+    ):
+        # Reset the matrix profile if a new interactive
+        # feedback processing was started
+        matrix_profile.fb_baseline = matrix_profile.fb_baseline_start
+        matrix_profile.last_values = matrix_profile.last_values[
+            -matrix_profile.window :
+        ]
+        for value in matrix_profile.last_values:
+            matrix_profile.fb_baseline.update(value)
+
+        # Update the cache entry
+        Cache.set(
+            namespace=CacheNamespace.interactive_mode_turned_on,
+            key=tsd.sensor.id,
+            item=True,
+        )
+        return interactive_feedback_mode_processing(matrix_profile, tsd)
+
+    elif (
+        last_interactive_feedback_mode_turned_on is False
+        and current_interactive_feedback_mode_turned_on is False
+    ):
+        return normal_mode_processing(matrix_profile, tsd)
+
+    else:
+        # True, True option
+        return interactive_feedback_mode_processing(matrix_profile, tsd)

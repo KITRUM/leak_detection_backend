@@ -35,6 +35,7 @@ class AnomalyDetectionBase(BaseModel):
     """
 
     value: AnomalyDeviation
+    interactive_feedback_mode: bool = False
 
 
 class AnomalyDetectionUncommited(AnomalyDetectionBase, InternalModel):
@@ -71,3 +72,9 @@ class MatrixProfile(InternalModel):
     window: int = settings.anomaly_detection.window_size
     mp_level: MatrixProfileLevel = MatrixProfileLevel.HIGH
     baseline: aampi
+    fb_max_dis: np.float64
+    fb_ts: list[np.float64] = Field(
+        default_factory=list
+    )  # all historical data about feedback
+    fb_baseline_start: aampi  #  initial baseline
+    fb_baseline: aampi  # same as self.baseline

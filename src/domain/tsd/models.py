@@ -3,10 +3,20 @@ from datetime import datetime
 import numpy as np
 from pydantic import BaseModel, validator
 
-from src.domain.sensors import SensorInDb
+from src.domain.sensors import Sensor
 from src.infrastructure.models import InternalModel
 
 __all__ = ("TsdRaw", "TsdUncommited", "TsdInDb", "Tsd")
+
+
+def _convert_ppmv_to_internal_callback(
+    cls, value: float | np.float64
+) -> np.float64:
+    """The validation callback that is used by Pydantic."""
+
+    if type(value) == np.float64:
+        return value
+    return np.float64(value)
 
 
 class TsdRaw(BaseModel):
@@ -35,12 +45,9 @@ class TsdInDb(TsdUncommited):
 
     id: int
 
-    @validator("ppmv", pre=True)
-    def convert_ppmv(cls, value: float | np.float64) -> np.float64:
-        if type(value) == np.float64:
-            return value
-
-        return np.float64(value)
+    validator("ppmv", pre=True, allow_reuse=True)(
+        _convert_ppmv_to_internal_callback
+    )
 
 
 class Tsd(TsdRaw, InternalModel):
@@ -48,11 +55,8 @@ class Tsd(TsdRaw, InternalModel):
 
     id: int
     ppmv: np.float64
-    sensor: SensorInDb
+    sensor: Sensor
 
-    @validator("ppmv", pre=True)
-    def convert_ppmv(cls, value: float | np.float64) -> np.float64:
-        if type(value) == np.float64:
-            return value
-
-        return np.float64(value)
+    validator("ppmv", pre=True, allow_reuse=True)(
+        _convert_ppmv_to_internal_callback
+    )

@@ -4,10 +4,32 @@ from pydantic import validator
 from src.domain.templates.models import Template
 from src.infrastructure.models import InternalModel
 
-__all__ = ("SensorUncommited", "SensorInDb", "Sensor")
+__all__ = (
+    "SensorBase",
+    "SensorUncommited",
+    "SensorInDb",
+    "Sensor",
+    "SensorConfigurationUncommited",
+    "SensorConfigurationInDb",
+    "SensorCreateSchema",
+)
 
 
-class _SensorBase(InternalModel):
+# ************************************************
+# ********** Sensor Configuration **********
+# ************************************************
+class SensorConfigurationUncommited(InternalModel):
+    interactive_feedback_mode: bool = False
+
+
+class SensorConfigurationInDb(SensorConfigurationUncommited):
+    id: int
+
+
+# ************************************************
+# ********** Sensor **********
+# ************************************************
+class SensorBase(InternalModel):
     """This mixin includes shared model fields for all internal models."""
 
     name: str
@@ -27,11 +49,12 @@ class _SensorBase(InternalModel):
         return np.float64(value)
 
 
-class SensorUncommited(_SensorBase):
+class SensorUncommited(SensorBase):
     """This schema should be used for passing it
     to the repository operation.
     """
 
+    configuration_id: int
     template_id: int
 
 
@@ -41,8 +64,22 @@ class SensorInDb(SensorUncommited):
     id: int
 
 
-class Sensor(_SensorBase):
+class Sensor(SensorBase):
     """The internal sensor representation with nested data mdoel."""
 
     id: int
+    configuration: SensorConfigurationInDb
     template: Template
+
+
+# ************************************************
+# ********** Other values objects **********
+# ************************************************
+class SensorCreateSchema(InternalModel):
+    """This value objects encapsulates all data
+    that is used in the sensor's ceration process.
+    """
+
+    configuration_uncommited: SensorConfigurationUncommited
+    template_id: int
+    sensor_payload: SensorBase

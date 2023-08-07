@@ -16,6 +16,7 @@ from src.domain.anomaly_detection import (
     AnomalyDetectionUncommited,
     services,
 )
+from src.infrastructure.errors import UnprocessableError
 
 
 async def process():
@@ -27,12 +28,13 @@ async def process():
     logger.success("Background anomaly detection processing")
 
     async for tsd in data_lake.time_series_data.consume():  # type is Tsd
-        logger.debug(f"Anomaly detection processing: {tsd.id}")
+        logger.debug(f"Anomaly detection processing: {tsd.ppmv}")
 
-        # create_schema: AnomalyDetectionUncommited = services.process(tsd)
-        create_schema: AnomalyDetectionUncommited = (
-            services.feedback_mode_processing(tsd)
-        )
+        try:
+            create_schema: AnomalyDetectionUncommited = services.process(tsd)
+        except UnprocessableError:
+            # NOTE: Skipped if matrix profile does not have enough values
+            continue
 
         # Save a detection to the database
         anomaly_detection: AnomalyDetection = (

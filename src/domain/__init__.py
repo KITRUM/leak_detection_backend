@@ -1,4 +1,4 @@
-from src.domain import (  # noqa: F401
+from . import (  # noqa: F401
     anomaly_detection,
     currents,
     estimation,
