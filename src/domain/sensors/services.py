@@ -4,7 +4,8 @@ from src.infrastructure.database.services.transaction import transaction
 
 from .models import (
     Sensor,
-    SensorConfigurationInDb,
+    SensorConfigurationFlat,
+    SensorConfigurationPartialUpdateSchema,
     SensorCreateSchema,
     SensorUncommited,
 )
@@ -18,7 +19,7 @@ async def create(schema: SensorCreateSchema) -> Sensor:
     sensors_repository = SensorsRepository()
     configurations_repository = SensorsConfigurationsRepository()
 
-    configuration: SensorConfigurationInDb = (
+    configuration: SensorConfigurationFlat = (
         await configurations_repository.create(schema.configuration_uncommited)
     )
 
@@ -33,3 +34,16 @@ async def create(schema: SensorCreateSchema) -> Sensor:
     )
 
     return sensor
+
+
+@transaction
+async def update_configuration(
+    sensor_id: int, update_schema: SensorConfigurationPartialUpdateSchema
+) -> SensorConfigurationFlat:
+    """Update the sensor's configuration."""
+
+    sensor = await SensorsRepository().get(id_=sensor_id)
+
+    return await SensorsConfigurationsRepository().update_partially(
+        sensor.configuration.id, update_schema
+    )

@@ -27,6 +27,7 @@ class TemplatesRepository(BaseRepository[TemplatesTable]):
             yield Template.from_orm(schema)
 
     async def sensors_number(self, id_: int) -> int:
+        # TODO: Investigate if we do need this join here?
         result: Result = await self.execute(
             func.count(
                 select(self.schema_class.template_id.id)

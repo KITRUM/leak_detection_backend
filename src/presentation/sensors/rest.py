@@ -4,16 +4,25 @@ from typing import AsyncGenerator
 from fastapi import APIRouter, Request, status
 
 from src.application import tsd
-from src.domain.sensors import Sensor, SensorsRepository
-from src.domain.sensors import services as sensors_services
-from src.domain.sensors.models import (
+from src.domain.sensors import (
+    Sensor,
     SensorBase,
     SensorConfigurationUncommited,
     SensorCreateSchema,
+    SensorsRepository,
 )
+from src.domain.sensors import services as sensors_services
+from src.domain.sensors.models import (
+    SensorConfigurationFlat,
+    SensorConfigurationPartialUpdateSchema,
+)
+from src.domain.sensors.repository import SensorsConfigurationsRepository
 from src.infrastructure.contracts import Response, ResponseMulti
 from src.infrastructure.database import transaction
-from src.presentation.sensors.contracts import (
+
+from .contracts import (
+    SensorConfigurationPublic,
+    SensorConfigurationUpdateRequestBody,
     SensorCreateRequestBody,
     SensorPublic,
 )
@@ -23,6 +32,9 @@ __all__ = ("router",)
 router = APIRouter(prefix="", tags=["Sensors"])
 
 
+# ************************************************
+# ********** CRUD block **********
+# ************************************************
 @router.post(
     "/templates/{template_id}/sensors", status_code=status.HTTP_201_CREATED
 )
@@ -72,3 +84,39 @@ async def sensor_retrieve(_: Request, sensor_id: int):
     sensor_public = SensorPublic.from_orm(sensor)
 
     return Response[SensorPublic](result=sensor_public)
+
+
+# ************************************************
+# ********** Interactive feedback mode ***********
+# ************************************************
+@router.get("/sensors/{sensor_id}/configuration")
+@transaction
+async def sensor_configuration_retrieve(
+    _: Request, sensor_id: int
+) -> Response[SensorConfigurationPublic]:
+    """Return the sensor's configuration."""
+
+    configuration: SensorConfigurationFlat = (
+        await SensorsConfigurationsRepository().by_sensor(sensor_id)
+    )
+    configuration_public = SensorConfigurationPublic.from_orm(configuration)
+
+    return Response[SensorConfigurationPublic](result=configuration_public)
+
+
+@router.patch("/sensors/{sensor_id}/configuration")
+async def sensor_configuration_update(
+    _: Request, sensor_id: int, schema: SensorConfigurationUpdateRequestBody
+) -> Response[SensorConfigurationPublic]:
+    """Partially update the sensor's configuration."""
+
+    configuration: SensorConfigurationFlat = (
+        await sensors_services.update_configuration(
+            sensor_id,
+            SensorConfigurationPartialUpdateSchema.from_orm(schema),
+        )
+    )
+
+    return Response[SensorConfigurationPublic](
+        result=SensorConfigurationPublic.from_orm(configuration)
+    )

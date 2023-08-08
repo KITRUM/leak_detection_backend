@@ -10,8 +10,9 @@ __all__ = (
     "SensorInDb",
     "Sensor",
     "SensorConfigurationUncommited",
-    "SensorConfigurationInDb",
+    "SensorConfigurationFlat",
     "SensorCreateSchema",
+    "SensorConfigurationPartialUpdateSchema",
 )
 
 
@@ -22,7 +23,16 @@ class SensorConfigurationUncommited(InternalModel):
     interactive_feedback_mode: bool = False
 
 
-class SensorConfigurationInDb(SensorConfigurationUncommited):
+class SensorConfigurationPartialUpdateSchema(InternalModel):
+    """This data model is used for partial updating of the database table.
+    If the field is not provided, then
+    the repository layer does not care about it.
+    """
+
+    interactive_feedback_mode: bool | None = None
+
+
+class SensorConfigurationFlat(SensorConfigurationUncommited):
     id: int
 
 
@@ -68,7 +78,7 @@ class Sensor(SensorBase):
     """The internal sensor representation with nested data mdoel."""
 
     id: int
-    configuration: SensorConfigurationInDb
+    configuration: SensorConfigurationFlat
     template: Template
 
 

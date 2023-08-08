@@ -5,7 +5,9 @@ from sqlalchemy.orm import joinedload
 
 from src.domain.sensors.models import (
     Sensor,
-    SensorConfigurationInDb,
+    SensorBase,
+    SensorConfigurationFlat,
+    SensorConfigurationPartialUpdateSchema,
     SensorConfigurationUncommited,
     SensorUncommited,
 )
@@ -24,18 +26,44 @@ class SensorsConfigurationsRepository(
 ):
     schema_class = SensorsConfigurationsTable
 
+    async def update_partially(
+        self, id_: int, schema: SensorConfigurationPartialUpdateSchema
+    ) -> SensorConfigurationFlat:
+        _schema = await self._update(
+            key="id",
+            value=id_,
+            payload=schema.dict(exclude_none=True, exclude_unset=True),
+        )
+
+        return SensorConfigurationFlat.from_orm(_schema)
+
     async def update(
         self, id_: int, schema: SensorConfigurationUncommited
-    ) -> SensorConfigurationInDb:
+    ) -> SensorConfigurationFlat:
         """Update the configuration by id."""
 
         _schema = await self._update(
             key="id", value=id_, payload=schema.dict()
         )
 
-        return SensorConfigurationInDb.from_orm(_schema)
+        return SensorConfigurationFlat.from_orm(_schema)
 
-    async def get(self, id_: int) -> SensorConfigurationInDb:
+    async def by_sensor(self, sensor_id: int) -> SensorConfigurationFlat:
+        """Fetch the configuration by sensor id."""
+
+        query: Select = (
+            select(self.schema_class)
+            .join(self.schema_class.sensor)
+            .where(SensorsTable.id == sensor_id)
+        )
+        result: Result = await self._session.execute(query)
+
+        if not (schema := result.scalars().one_or_none()):
+            raise NotFoundError
+
+        return SensorConfigurationFlat.from_orm(schema)
+
+    async def get(self, id_: int) -> SensorConfigurationFlat:
         """Fetch the configuration by id."""
 
         query: Select = select(self.schema_class).where(
@@ -46,11 +74,11 @@ class SensorsConfigurationsRepository(
         if not (schema := result.scalars().one_or_none()):
             raise NotFoundError
 
-        return SensorConfigurationInDb.from_orm(schema)
+        return SensorConfigurationFlat.from_orm(schema)
 
     async def create(
         self, schema: SensorConfigurationUncommited
-    ) -> SensorConfigurationInDb:
+    ) -> SensorConfigurationFlat:
         """Create a new record in database."""
 
         _schema: SensorsConfigurationsTable = await self._save(

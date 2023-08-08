@@ -98,16 +98,13 @@ def update_matrix_profile(matrix_profile: MatrixProfile, tsd: Tsd) -> None:
 # ************************************************
 # ********** Processing **********
 # ************************************************
-# TODO: Update by removing fb_status
 def interactive_feedback_mode_processing(
     matrix_profile: MatrixProfile, tsd: Tsd
 ) -> AnomalyDetectionUncommited:
-    """The interactive feedback mode processing implementation."""
-
-    logger.success(
-        "The interactive feedback mode processing...\n"
-        f"{tsd.ppmv=}, {matrix_profile.counter}"
-    )
+    """The interactive feedback mode processing implementation.
+    It is used in case the sensor.configuration.interactive_feedback_mode
+    is turned on.
+    """
 
     matrix_profile.baseline.update(tsd.ppmv)
     matrix_profile.last_values.append(tsd.ppmv)
@@ -136,13 +133,17 @@ def interactive_feedback_mode_processing(
         deviation = AnomalyDeviation.CRITICAL
 
     return AnomalyDetectionUncommited(
-        value=deviation, time_series_data_id=tsd.id
+        value=deviation,
+        time_series_data_id=tsd.id,
+        interactive_feedback_mode=True,
     )
 
 
 def normal_mode_processing(
     matrix_profile: MatrixProfile, tsd: Tsd
 ) -> AnomalyDetectionUncommited:
+    """The regular/normal mode for the anomaly detection process."""
+
     update_matrix_profile(matrix_profile, tsd)
 
     # The processing is skipped if not enough items in the matrix profile
@@ -167,7 +168,9 @@ def normal_mode_processing(
         deviation = AnomalyDeviation.CRITICAL
 
     return AnomalyDetectionUncommited(
-        value=deviation, time_series_data_id=tsd.id
+        value=deviation,
+        time_series_data_id=tsd.id,
+        interactive_feedback_mode=False,
     )
 
 
