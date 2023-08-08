@@ -16,3 +16,16 @@ GET {{HTTP__BASE_URL}}/templates/1/sensors
 
 ### Retrieve the sensor
 GET {{HTTP__BASE_URL}}/sensors/1
+
+
+### Retrieve the sensor's configuration
+GET {{HTTP__BASE_URL}}/sensors/1/configuration
+
+
+### Update the sensor's configuration
+PATCH {{HTTP__BASE_URL}}/sensors/1/configuration
+Content-Type: application/json
+
+{
+    "interactiveFeedbackMode": true
+}
