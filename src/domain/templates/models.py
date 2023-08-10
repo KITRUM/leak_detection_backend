@@ -64,6 +64,28 @@ class TemplateUncommited(InternalModel):
     platform_id: int
 
 
+class TemplatePartialUpdateSchema(InternalModel):
+    currents_path: str | None = None
+    waves_path: str | None = None
+    simulated_leaks_path: str | None = None
+
+    name: str | None = None
+    angle_from_north: np.float64 | None = None
+    height: np.float64 | None = None
+    z_roof: np.float64 | None = None
+
+    # Semi-closed parameters
+    porosity: dict | None = Field(default_factory=dict)
+    wall_area: dict | None = Field(default_factory=dict)
+    inclination: dict | None = Field(default_factory=dict)
+
+    internal_volume: np.float64 | None = None
+
+    # Required if internal_volume is not defined
+    length: np.float64 | None = None
+    width: np.float64 | None = None
+
+
 # TODO: This class should be refactored by using pydantic.validator
 class Template(TemplateUncommited):
     """The internal template representation."""

@@ -2,10 +2,11 @@ from typing import AsyncGenerator
 
 from sqlalchemy import Result, Select, func, select
 
-from src.domain.templates.models import Template, TemplateUncommited
 from src.infrastructure.database import BaseRepository, TemplatesTable
 from src.infrastructure.errors import NotFoundError
 from src.infrastructure.errors.base import UnprocessableError
+
+from .models import Template, TemplatePartialUpdateSchema, TemplateUncommited
 
 all = ("TemplatesRepository",)
 
@@ -21,8 +22,21 @@ class TemplatesRepository(BaseRepository[TemplatesTable]):
         )
         return Template.from_orm(_schema)
 
+    async def update_partially(
+        self, id_: int, schema: TemplatePartialUpdateSchema
+    ) -> Template:
+        if not (payload := schema.dict(exclude_none=True, exclude_unset=True)):
+            raise UnprocessableError(
+                message="Can not update without any payload"
+            )
+
+        _schema = await self._update(key="id", value=id_, payload=payload)
+
+        return Template.from_orm(_schema)
+
     async def all(self) -> AsyncGenerator[Template, None]:
         """Fetch all templates from database."""
+
         async for schema in self._all():
             yield Template.from_orm(schema)
 

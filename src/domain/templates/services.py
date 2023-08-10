@@ -1,5 +1,6 @@
 from src.infrastructure.database.services.transaction import transaction
 
+from .models import Template, TemplatePartialUpdateSchema
 from .repository import TemplatesRepository
 
 
@@ -10,7 +11,9 @@ async def get_template_by_id(id_: int):
 
 
 @transaction
-async def get_sensors_number(id_: int):
-    """Get template's sensros number."""
+async def update(
+    template_id: int, schema: TemplatePartialUpdateSchema
+) -> Template:
+    """Partially update the template."""
 
-    return TemplatesRepository().sensors_number(id_)
+    return await TemplatesRepository().update_partially(template_id, schema)
