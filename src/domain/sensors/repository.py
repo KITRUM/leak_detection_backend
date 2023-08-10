@@ -3,20 +3,23 @@ from typing import AsyncGenerator
 from sqlalchemy import Result, Select, select
 from sqlalchemy.orm import joinedload
 
-from src.domain.sensors.models import (
-    Sensor,
-    SensorBase,
-    SensorConfigurationFlat,
-    SensorConfigurationPartialUpdateSchema,
-    SensorConfigurationUncommited,
-    SensorUncommited,
-)
 from src.infrastructure.database import (
     BaseRepository,
     SensorsConfigurationsTable,
     SensorsTable,
 )
 from src.infrastructure.errors import NotFoundError
+from src.infrastructure.errors.base import UnprocessableError
+
+from .models import (
+    Sensor,
+    SensorConfigurationFlat,
+    SensorConfigurationUncommited,
+    SensorConfigurationUpdatePartialSchema,
+    SensorInDb,
+    SensorUncommited,
+    SensorUpdatePartialSchema,
+)
 
 all = ("SensorsRepository", "SensorConfigurationRepository")
 
@@ -27,13 +30,14 @@ class SensorsConfigurationsRepository(
     schema_class = SensorsConfigurationsTable
 
     async def update_partially(
-        self, id_: int, schema: SensorConfigurationPartialUpdateSchema
+        self, id_: int, schema: SensorConfigurationUpdatePartialSchema
     ) -> SensorConfigurationFlat:
-        _schema = await self._update(
-            key="id",
-            value=id_,
-            payload=schema.dict(exclude_none=True, exclude_unset=True),
-        )
+        if not (payload := schema.dict(exclude_none=True, exclude_unset=True)):
+            raise UnprocessableError(
+                message="Can not update without any payload"
+            )
+
+        _schema = await self._update(key="id", value=id_, payload=payload)
 
         return SensorConfigurationFlat.from_orm(_schema)
 
@@ -117,6 +121,18 @@ class SensorsRepository(BaseRepository[SensorsTable]):
         )
 
         return await self.get(id_=_schema.id)
+
+    async def update_partially(
+        self, id_: int, schema: SensorUpdatePartialSchema
+    ) -> SensorInDb:
+        if not (payload := schema.dict(exclude_none=True, exclude_unset=True)):
+            raise UnprocessableError(
+                message="Can not update without any payload"
+            )
+
+        _schema = await self._update(key="id", value=id_, payload=payload)
+
+        return SensorInDb.from_orm(_schema)
 
     async def all(self) -> AsyncGenerator[Sensor, None]:
         """Fetch all sensors from database."""

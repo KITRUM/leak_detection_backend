@@ -1,22 +1,22 @@
 import asyncio
 from typing import AsyncGenerator
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Request
 
 from src.application import tsd
 from src.domain.sensors import (
     Sensor,
     SensorBase,
+    SensorConfigurationFlat,
     SensorConfigurationUncommited,
+    SensorConfigurationUpdatePartialSchema,
     SensorCreateSchema,
+    SensorsConfigurationsRepository,
     SensorsRepository,
 )
 from src.domain.sensors import services as sensors_services
-from src.domain.sensors.models import (
-    SensorConfigurationFlat,
-    SensorConfigurationPartialUpdateSchema,
-)
-from src.domain.sensors.repository import SensorsConfigurationsRepository
+from src.domain.sensors.models import SensorUpdatePartialSchema
+from src.infrastructure.application import tasks
 from src.infrastructure.contracts import Response, ResponseMulti
 from src.infrastructure.database import transaction
 
@@ -25,6 +25,7 @@ from .contracts import (
     SensorConfigurationUpdateRequestBody,
     SensorCreateRequestBody,
     SensorPublic,
+    SensorUpdateRequestBody,
 )
 
 __all__ = ("router",)
@@ -35,9 +36,7 @@ router = APIRouter(prefix="", tags=["Sensors"])
 # ************************************************
 # ********** CRUD block **********
 # ************************************************
-@router.post(
-    "/templates/{template_id}/sensors", status_code=status.HTTP_201_CREATED
-)
+@router.post("/templates/{template_id}/sensors", status_code=201)
 @transaction
 async def sensor_create(
     _: Request, template_id: int, schema: SensorCreateRequestBody
@@ -53,7 +52,9 @@ async def sensor_create(
     sensor: Sensor = await sensors_services.create(create_schema)
 
     # Run the processing task in a background on sensor creation
-    asyncio.create_task(tsd.process(sensor))
+    await tasks.run(
+        namespace="sensor_tsd_process", key=sensor.id, coro=tsd.process(sensor)
+    )
 
     return Response[SensorPublic](result=SensorPublic.from_orm(sensor))
 
@@ -86,37 +87,34 @@ async def sensor_retrieve(_: Request, sensor_id: int):
     return Response[SensorPublic](result=sensor_public)
 
 
-# ************************************************
-# ********** Interactive feedback mode ***********
-# ************************************************
-@router.get("/sensors/{sensor_id}/configuration")
-@transaction
-async def sensor_configuration_retrieve(
-    _: Request, sensor_id: int
-) -> Response[SensorConfigurationPublic]:
-    """Return the sensor's configuration."""
+@router.patch("/sensors/{sensor_id}")
+async def sensor_update(
+    _: Request, sensor_id: int, schema: SensorUpdateRequestBody
+) -> Response[SensorPublic]:
+    """Partially update the sensor."""
 
-    configuration: SensorConfigurationFlat = (
-        await SensorsConfigurationsRepository().by_sensor(sensor_id)
-    )
-    configuration_public = SensorConfigurationPublic.from_orm(configuration)
-
-    return Response[SensorConfigurationPublic](result=configuration_public)
-
-
-@router.patch("/sensors/{sensor_id}/configuration")
-async def sensor_configuration_update(
-    _: Request, sensor_id: int, schema: SensorConfigurationUpdateRequestBody
-) -> Response[SensorConfigurationPublic]:
-    """Partially update the sensor's configuration."""
-
-    configuration: SensorConfigurationFlat = (
-        await sensors_services.update_configuration(
-            sensor_id,
-            SensorConfigurationPartialUpdateSchema.from_orm(schema),
-        )
+    sensor: Sensor = await sensors_services.update(
+        sensor_id=sensor_id,
+        sensor_update_schema=SensorUpdatePartialSchema.from_orm(schema),
+        configuration_update_schema=SensorConfigurationUpdatePartialSchema.from_orm(
+            schema.configuration
+        ),
     )
 
-    return Response[SensorConfigurationPublic](
-        result=SensorConfigurationPublic.from_orm(configuration)
-    )
+    return Response[SensorPublic](result=SensorPublic.from_orm(sensor))
+
+
+@router.delete("/sensors/{sensor_id}", status_code=204)
+async def sensor_delete(_: Request, sensor_id: int) -> None:
+    """Delete the sensor and its configuration.
+    Stop the background tasks which process
+    the time series data for that specific sensor.
+    """
+
+    # Remove the sensor and the configuration
+    await sensors_services.delete(sensor_id)
+
+    # Cancel the task if a user removes the sensor
+    tasks.cancel(namespace="sensor_tsd_process", key=sensor_id)
+
+    await sensors_services.delete(sensor_id)

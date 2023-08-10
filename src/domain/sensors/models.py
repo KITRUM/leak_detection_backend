@@ -7,12 +7,13 @@ from src.infrastructure.models import InternalModel
 __all__ = (
     "SensorBase",
     "SensorUncommited",
+    "SensorUpdatePartialSchema",
     "SensorInDb",
     "Sensor",
     "SensorConfigurationUncommited",
     "SensorConfigurationFlat",
     "SensorCreateSchema",
-    "SensorConfigurationPartialUpdateSchema",
+    "SensorConfigurationUpdatePartialSchema",
 )
 
 
@@ -23,7 +24,7 @@ class SensorConfigurationUncommited(InternalModel):
     interactive_feedback_mode: bool = False
 
 
-class SensorConfigurationPartialUpdateSchema(InternalModel):
+class SensorConfigurationUpdatePartialSchema(InternalModel):
     """This data model is used for partial updating of the database table.
     If the field is not provided, then
     the repository layer does not care about it.
@@ -68,6 +69,13 @@ class SensorUncommited(SensorBase):
     template_id: int
 
 
+class SensorUpdatePartialSchema(InternalModel):
+    name: str | None = None
+    x: np.float64 | None = None
+    y: np.float64 | None = None
+    z: np.float64 | None = None
+
+
 class SensorInDb(SensorUncommited):
     """The internal sensor representation."""
 
@@ -83,7 +91,7 @@ class Sensor(SensorBase):
 
 
 # ************************************************
-# ********** Other values objects **********
+# ********** Aggregates **********
 # ************************************************
 class SensorCreateSchema(InternalModel):
     """This value objects encapsulates all data
