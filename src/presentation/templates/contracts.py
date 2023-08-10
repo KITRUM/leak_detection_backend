@@ -86,6 +86,36 @@ class TemplateCreateRequestBody(PublicModel):
         return TemplateUncommited(**payload)
 
 
+class TemplateUpdateRequestBody(PublicModel):
+    currents_path: Path | None = Field(
+        description="The file with currents baseline."
+    )
+    waves_path: Path | None = Field(
+        description="The file with waves baseline.", default=None
+    )
+    simulated_leaks_path: Path | None = Field(
+        description="The file with currents baseline.", default=None
+    )
+
+    name: str | None = Field(
+        description="The name of the tempalte", default=None
+    )
+    angle_from_north: float | None = None
+    height: float | None = None
+    z_roof: float | None = None
+
+    # Semi-closed parameters
+    porosity: GeometryInformationPublic | None = Field(default_factory=None)
+    wall_area: GeometryInformationPublic | None = Field(default_factory=None)
+    inclination: GeometryInformationPublic | None = Field(default_factory=None)
+
+    internal_volume: float | None = None
+
+    # Required if internal_volume is not defined
+    length: float | None = None
+    width: float | None = None
+
+
 class TemplatePublic(Template, PublicModel):
     """The public template data model.
 

@@ -4,14 +4,18 @@ from fastapi import APIRouter, Request, status
 
 from src.domain.templates import (
     Template,
+    TemplatePartialUpdateSchema,
     TemplatesRepository,
     TemplateUncommited,
 )
+from src.domain.templates import services as templates_services
 from src.infrastructure.contracts import Response, ResponseMulti
 from src.infrastructure.database import transaction
-from src.presentation.templates.contracts import (
+
+from .contracts import (
     TemplateCreateRequestBody,
     TemplatePublic,
+    TemplateUpdateRequestBody,
 )
 
 router = APIRouter(prefix="", tags=["Templates"])
@@ -62,3 +66,24 @@ async def template_retrieve(_: Request, template_id: int):
     template_public = TemplatePublic(**template.dict())
 
     return Response[TemplatePublic](result=template_public)
+
+
+@router.patch("/templates/{template_id}")
+async def template_update(
+    _: Request, template_id: int, schema: TemplateUpdateRequestBody
+):
+    """Partial update of a template."""
+
+    template: Template = await templates_services.update(
+        template_id, TemplatePartialUpdateSchema(**schema.dict())
+    )
+    template_public = TemplatePublic(**template.dict())
+
+    return Response[TemplatePublic](result=template_public)
+
+
+@router.delete("/templates/{template_id}")
+async def template_delete(_: Request, template_id: int):
+    """Delete a template."""
+
+    raise NotImplementedError
