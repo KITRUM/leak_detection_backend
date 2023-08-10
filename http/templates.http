@@ -24,3 +24,6 @@ Content-Type: application/json
     "name": "My favourite template 2",
     "angleFromNorth": 12.2
 }
+
+### Delete the template
+DELETE {{HTTP__BASE_URL}}/templates/1
