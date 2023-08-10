@@ -33,4 +33,4 @@ Content-Type: application/json
 
 
 ### Delete the sensor
-DELETE {{HTTP__BASE_URL}}/sensors/1
+DELETE {{HTTP__BASE_URL}}/sensors/3
