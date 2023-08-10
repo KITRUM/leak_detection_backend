@@ -9,9 +9,18 @@ Content-Type: application/json
 
 
 ### Get the list of all templates
-
 GET {{HTTP__BASE_URL}}/platforms/1/templates
 
-### Retrieve the template
 
+### Retrieve the template
 GET {{HTTP__BASE_URL}}/templates/1
+
+
+### Update the template
+PATCH {{HTTP__BASE_URL}}/templates/1
+Content-Type: application/json
+
+{
+    "name": "My favourite template 2",
+    "angleFromNorth": 12.2
+}

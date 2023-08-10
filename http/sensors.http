@@ -18,14 +18,19 @@ GET {{HTTP__BASE_URL}}/templates/1/sensors
 GET {{HTTP__BASE_URL}}/sensors/1
 
 
-### Retrieve the sensor's configuration
-GET {{HTTP__BASE_URL}}/sensors/1/configuration
-
-
-### Update the sensor's configuration
-PATCH {{HTTP__BASE_URL}}/sensors/1/configuration
+### Update partially the sensor
+PATCH {{HTTP__BASE_URL}}/sensors/1
 Content-Type: application/json
 
 {
-    "interactiveFeedbackMode": true
+
+    "x": 2,
+    "y": 2,
+    "configuration": {
+        "interactiveFeedbackMode": false
+    }
 }
+
+
+### Delete the sensor
+DELETE {{HTTP__BASE_URL}}/sensors/1
