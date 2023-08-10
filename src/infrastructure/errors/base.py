@@ -14,6 +14,7 @@ __all__ = (
     "UnprocessableError",
     "NotFoundError",
     "DatabaseError",
+    "TaskErorr",
 )
 
 
@@ -59,6 +60,13 @@ class DatabaseError(BaseError):
     def __init__(
         self, *_: tuple[Any], message: str = "Database error"
     ) -> None:
+        super().__init__(
+            message=message, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+class TaskErorr(BaseError):
+    def __init__(self, *_: tuple[Any], message: str) -> None:
         super().__init__(
             message=message, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

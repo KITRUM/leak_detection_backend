@@ -1,10 +1,13 @@
+from functools import partial
+from typing import Callable, Iterable
+
 from fastapi import FastAPI
 from loguru import logger
 
 from src import application, domain, presentation
 from src.config import settings
 from src.infrastructure.application import create as application_factory
-from src.infrastructure.application import middlewares
+from src.infrastructure.application import middlewares, tasks
 
 # Adjust the logging
 # -------------------------------
@@ -27,7 +30,7 @@ logger.add(
 # Define shutdown tasks
 # -------------------------------
 # NOTE: tasks are running in a sequence
-shutdown_tasks = []
+shutdown_tasks: Iterable[Callable] = []
 
 if settings.debug is True:
     shutdown_tasks.extend(
@@ -58,11 +61,31 @@ app: FastAPI = application_factory(
         presentation.events.templates.router,
     ),
     startup_tasks=[
-        application.tsd.process_for_existed_sensors,
-        application.anomaly_detection.process,
-        application.simulation.process,
-        application.estimation.process,
-        application.events.process,
+        application.tsd.create_tasks_for_existed_sensors_process,
+        partial(
+            tasks.run,
+            namespace="anomaly_detection",
+            key="processing",
+            coro=application.anomaly_detection.process(),
+        ),
+        partial(
+            tasks.run,
+            namespace="simulation",
+            key="processing",
+            coro=application.simulation.process(),
+        ),
+        partial(
+            tasks.run,
+            namespace="estimation",
+            key="processing",
+            coro=application.estimation.process(),
+        ),
+        partial(
+            tasks.run,
+            namespace="events",
+            key="process",
+            coro=application.events.process(),
+        ),
     ],
     shutdown_tasks=shutdown_tasks,
 )

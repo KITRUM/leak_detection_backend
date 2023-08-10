@@ -25,11 +25,7 @@ async def process():
     to the database for making the history available.
     """
 
-    logger.success("Background anomaly detection processing")
-
     async for tsd in data_lake.time_series_data.consume():  # type is Tsd
-        logger.debug(f"Anomaly detection processing: {tsd.ppmv}")
-
         try:
             create_schema: AnomalyDetectionUncommited = services.process(tsd)
         except UnprocessableError:

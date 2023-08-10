@@ -5,6 +5,7 @@ using the specific platform parser.
 """
 
 import asyncio
+from typing import Coroutine
 
 from loguru import logger
 
@@ -12,10 +13,11 @@ from src.application.data_lake import data_lake
 from src.config import settings
 from src.domain.sensors import Sensor, SensorsRepository
 from src.domain.tsd import Tsd, TsdRaw, services
+from src.infrastructure.application import tasks
 
 from ..tsd import mock
 
-__all__ = ("process", "process_for_existed_sensors")
+__all__ = ("process", "create_tasks_for_existed_sensors_process")
 
 
 async def _mock_process_time_series_data(sensor):
@@ -34,7 +36,7 @@ async def _mock_process_time_series_data(sensor):
 
         tsd_raw: TsdRaw = parser(row)
 
-        logger.debug(f"TSD processing: {tsd_raw.ppmv}")
+        logger.debug(f"TSD processing: {sensor.id}: {tsd_raw.ppmv}")
 
         # HACK: Some files have pick values that we'd like
         #       to avoide for the demo
@@ -65,10 +67,12 @@ async def process(sensor: Sensor):
     )
 
 
-async def process_for_existed_sensors():
-    """This function is used as a background task reference."""
-
-    logger.success("Background time series data processing")
+async def create_tasks_for_existed_sensors_process():
+    """Run a batch of background tasks."""
 
     async for sensor in SensorsRepository().all():
-        asyncio.create_task(process(sensor))
+        await tasks.run(
+            namespace="sensor_tsd_process",
+            key=sensor.id,
+            coro=process(sensor),
+        )

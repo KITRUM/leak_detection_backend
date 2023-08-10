@@ -6,10 +6,11 @@ from fastapi import APIRouter, FastAPI
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 
-from src.infrastructure.application import middlewares
+from src.infrastructure.application import middlewares, tasks
 from src.infrastructure.errors import (
     BaseError,
     custom_base_errors_handler,
+    not_implemented_errors_handler,
     pydantic_validation_errors_handler,
     python_base_error_handler,
 )
@@ -45,18 +46,18 @@ def create(
     )
     app.exception_handler(BaseError)(custom_base_errors_handler)
     app.exception_handler(ValidationError)(pydantic_validation_errors_handler)
+    app.exception_handler(NotImplementedError)(not_implemented_errors_handler)
     app.exception_handler(Exception)(python_base_error_handler)
 
     # Define startup tasks
     # -----------------------------------------------
     for task in startup_tasks:
-        coro = partial(asyncio.create_task, task())
-        app.on_event("startup")(coro)
+        app.on_event("startup")(partial(asyncio.create_task, task()))
 
     # Define shutdown tasks
     # -----------------------------------------------
     for task in shutdown_tasks:
-        app.on_event("shutdown")(task)
+        app.on_event("shutdown")(partial(asyncio.create_task, task()))
 
     # Define middlewares
     # -----------------------------------------------
