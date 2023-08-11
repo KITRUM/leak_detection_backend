@@ -8,8 +8,6 @@ It depends on:
     - anomaly deviation calculation logic
 """
 
-from loguru import logger
-
 from src.application.data_lake import data_lake
 from src.domain.anomaly_detection import (
     AnomalyDetection,

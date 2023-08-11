@@ -1,5 +1,3 @@
-from enum import StrEnum
-
 from pydantic import Field
 
 from src.infrastructure.models import PublicModel
@@ -42,7 +40,9 @@ class SensorUpdateRequestBody(PublicModel):
     y: float | None = Field(
         description="The y position of the sensor", default=None
     )
-    z: float | None = Field(description="The z position of the sensor", default=None)
+    z: float | None = Field(
+        description="The z position of the sensor", default=None
+    )
 
     configuration: SensorConfigurationUpdateRequestBody | None = Field(
         description="The sensor's configuration", default=None
