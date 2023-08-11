@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import numpy as np
-from pydantic import BaseModel, validator
+from pydantic import validator
 
 from src.domain.sensors import Sensor
 from src.infrastructure.models import InternalModel
@@ -19,7 +19,7 @@ def _convert_ppmv_to_internal_callback(
     return np.float64(value)
 
 
-class TsdRaw(BaseModel):
+class TsdRaw(InternalModel):
     """The raw representation of time series data.
     This data model is used as a intermediate model by parser.
     """
@@ -28,12 +28,13 @@ class TsdRaw(BaseModel):
     timestamp: datetime
 
 
-class TsdUncommited(TsdRaw, InternalModel):
+class TsdUncommited(InternalModel):
     """This schema should be used for passing it
     to the repository operation.
     """
 
     ppmv: np.float64
+    timestamp: datetime
     sensor_id: int
 
     def __str__(self) -> str:
@@ -50,11 +51,9 @@ class TsdInDb(TsdUncommited):
     )
 
 
-class Tsd(TsdRaw, InternalModel):
+class Tsd(TsdInDb):
     """The internal representation of reach Time Series Data."""
 
-    id: int
-    ppmv: np.float64
     sensor: Sensor
 
     validator("ppmv", pre=True, allow_reuse=True)(

@@ -12,7 +12,7 @@ from src.domain.events.templates import (
 )
 
 TEMPLATES_CRITICAL_EVENT: dict[int, dict[int, bool]] = defaultdict(
-    partial(defaultdict, lambda: False)
+    partial(defaultdict, lambda: False)  # type: ignore[arg-type]
 )
 # NOTE: The overview of the data structure.
 #       17: tempalte id

@@ -36,24 +36,14 @@ class GeometryInformation(InternalModel):
         return np.array([])
 
 
-class TemplateUncommited(InternalModel):
-    """This schema should be used for passing it
-    to the repository operation.
-    """
-
-    currents_path: str
-    waves_path: str
-    simulated_leaks_path: str
+class _TemplateBase(InternalModel):
+    """The shared template payload."""
 
     name: str
+
     angle_from_north: np.float64
     height: np.float64 | None = None
     z_roof: np.float64 | None = None
-
-    # Semi-closed parameters
-    porosity: dict | None = Field(default_factory=dict)
-    wall_area: dict | None = Field(default_factory=dict)
-    inclination: dict | None = Field(default_factory=dict)
 
     internal_volume: np.float64 | None = None
 
@@ -62,6 +52,21 @@ class TemplateUncommited(InternalModel):
     width: np.float64 | None = None
 
     platform_id: int
+
+
+class TemplateUncommited(_TemplateBase):
+    """This schema should be used for passing it
+    to the repository operation.
+    """
+
+    currents_path: str
+    waves_path: str
+    simulated_leaks_path: str
+
+    # Semi-closed parameters
+    porosity: dict | None = Field(default_factory=dict)
+    wall_area: dict | None = Field(default_factory=dict)
+    inclination: dict | None = Field(default_factory=dict)
 
 
 class TemplatePartialUpdateSchema(InternalModel):
@@ -75,9 +80,9 @@ class TemplatePartialUpdateSchema(InternalModel):
     z_roof: np.float64 | None = None
 
     # Semi-closed parameters
-    porosity: dict | None = Field(default_factory=dict)
-    wall_area: dict | None = Field(default_factory=dict)
-    inclination: dict | None = Field(default_factory=dict)
+    porosity: dict | None = Field(default=None)
+    wall_area: dict | None = Field(default=None)
+    inclination: dict | None = Field(default=None)
 
     internal_volume: np.float64 | None = None
 
@@ -87,7 +92,7 @@ class TemplatePartialUpdateSchema(InternalModel):
 
 
 # TODO: This class should be refactored by using pydantic.validator
-class Template(TemplateUncommited):
+class Template(_TemplateBase):
     """The internal template representation."""
 
     id: int

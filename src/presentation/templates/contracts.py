@@ -4,7 +4,7 @@ import numpy as np
 from pydantic import Field
 
 from src.config import settings
-from src.domain.templates import Template, TemplateUncommited
+from src.domain.templates import TemplateUncommited
 from src.infrastructure.models import PublicModel
 
 
@@ -116,20 +116,31 @@ class TemplateUpdateRequestBody(PublicModel):
     width: float | None = None
 
 
-class TemplatePublic(Template, PublicModel):
+class TemplatePublic(PublicModel):
     """The public template data model.
 
     P.S. primitives are used due to the FastAPI limitation.
     """
 
+    id: int
+
+    currents_path: Path
+    waves_path: Path
+    simulated_leaks_path: Path
+
     angle_from_north: float
     height: float | None = None
-    internal_volume: float | None = None
-    length: float | None = None
-    width: float | None = None
     z_roof: float | None = None
 
     # Semi-closed parameters
     porosity: GeometryInformationPublic | None = None
     wall_area: GeometryInformationPublic | None = None
     inclination: GeometryInformationPublic | None = None
+
+    internal_volume: np.float64 | None = None
+
+    # Required if internal_volume is not defined
+    length: np.float64 | None = None
+    width: np.float64 | None = None
+
+    platform_id: int

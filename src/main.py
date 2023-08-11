@@ -30,7 +30,7 @@ logger.add(
 # Define shutdown tasks
 # -------------------------------
 # NOTE: tasks are running in a sequence
-shutdown_tasks: Iterable[Callable] = []
+shutdown_tasks: list[Callable] = []
 
 if settings.debug is True:
     shutdown_tasks.extend(

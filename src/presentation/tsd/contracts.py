@@ -1,6 +1,9 @@
-from src.domain.tsd import TsdRaw
+from datetime import datetime
+
 from src.infrastructure.models import PublicModel
 
 
-class TsdPublic(TsdRaw, PublicModel):
+class TsdPublic(PublicModel):
     id: int
+    ppmv: float
+    timestamp: datetime
