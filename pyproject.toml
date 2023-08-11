@@ -112,7 +112,7 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 show_error_codes = true
 namespace_packages = true
-exclude = ["migrations", "simulator", "anomaly_detector", "estimator"]
+exclude = ["migrations", "estimation", "database"]
 
 # Silint "type import errors" as our 3rd-party libs does not have types
 # Check: https://mypy.readthedocs.io/en/latest/config_file.html#import-discovery
@@ -121,6 +121,7 @@ follow_imports = 'silent'
 [[tool.mypy.overrides]]
 module = [
     "websockets.exceptions",
+    "stumpy.aampi",
 ]
 ignore_missing_imports = true
 

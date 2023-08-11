@@ -2,8 +2,7 @@ from typing import Any
 
 from starlette import status
 
-from src.infrastructure.models import ErrorResponseMulti
-from src.infrastructure.models.response import _Response
+from src.infrastructure.contracts import ErrorResponseMulti, _Response
 
 # NOTE: This constant represents the default error response for each request
 #       Uses only for OpenAPI

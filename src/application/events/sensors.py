@@ -17,7 +17,7 @@ from src.domain.events.sensors.models import (
 from src.infrastructure.errors.base import BaseError
 
 LAST_SENSORS_EVENTS_TYPES: dict[int, Deque[EventType]] = defaultdict(
-    partial(deque, maxlen=3)
+    partial(deque, maxlen=3)  # type: ignore[arg-type]
 )
 
 
@@ -48,7 +48,7 @@ async def process(anomaly_detection: AnomalyDetection) -> Event | None:
                 type=EventType.CRITICAL, sensor_id=sensor_id
             )
         case AnomalyDeviation.OK:
-            create_schema: EventUncommited = EventUncommited(
+            create_schema = EventUncommited(
                 type=EventType.OK, sensor_id=sensor_id
             )
         case _:

@@ -81,7 +81,7 @@ def get_wave_drag_coefficient(
             5.61 * (Cmy * 0.01 * Ubw / (constants.KN * omega)) ** (-0.109)
             - 7.3
         )
-        tau_wm = 0.5 * constants.ROW * fwc * (0.01 * Ubw) ** 2
+        tau_wm: float = 0.5 * constants.ROW * fwc * (0.01 * Ubw) ** 2
 
     # After iterating five times, do some additional computations
     A = np.exp(
