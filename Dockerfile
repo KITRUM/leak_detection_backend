@@ -1,14 +1,10 @@
-FROM --platform=linux/x86_64 python:3.11-slim
+FROM python:3.11-slim
 
 # Build arguments
 ARG PIPENV_EXTRA_ARGS
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1
-
-# Hardcode uvicorn hosting settings
-ENV UVICORN_HOST=0.0.0.0
-ENV UVICORN_PORT=8000
 
 
 WORKDIR /app/

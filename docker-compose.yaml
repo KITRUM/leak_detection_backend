@@ -8,6 +8,6 @@ services:
     env_file: '.env'
     command: bash -c "alembic upgrade head && uvicorn src.main:app"
     ports:
-      - 8000:8000
+      - '${DOCKER_UVICORN_PORT_EXPOSE}:${UVICORN_PORT}'
     volumes:
       - .:/app/
