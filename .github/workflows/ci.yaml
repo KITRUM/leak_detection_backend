@@ -1,0 +1,21 @@
+name: Code quality
+
+on: [pull_request]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install black ruff isort mypy
+      - name: Run linter
+        run: ruff .
+      - name: Run formatters
+        run: black -t py311 --check . && isort --check .
+      - name: Run types checker
+        run: mypy --check-untyped-defs ./
