@@ -12,7 +12,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        run: pip install black ruff isort mypy
+        run: pip install pipenv  && pipenv sync --dev --system
       - name: Run linter
         run: ruff .
       - name: Run formatters
