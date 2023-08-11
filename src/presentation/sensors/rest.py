@@ -1,4 +1,3 @@
-import asyncio
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, Request
@@ -7,22 +6,18 @@ from src.application import tsd
 from src.domain.sensors import (
     Sensor,
     SensorBase,
-    SensorConfigurationFlat,
     SensorConfigurationUncommited,
     SensorConfigurationUpdatePartialSchema,
     SensorCreateSchema,
-    SensorsConfigurationsRepository,
     SensorsRepository,
+    SensorUpdatePartialSchema,
 )
 from src.domain.sensors import services as sensors_services
-from src.domain.sensors.models import SensorUpdatePartialSchema
 from src.infrastructure.application import tasks
 from src.infrastructure.contracts import Response, ResponseMulti
 from src.infrastructure.database import transaction
 
 from .contracts import (
-    SensorConfigurationPublic,
-    SensorConfigurationUpdateRequestBody,
     SensorCreateRequestBody,
     SensorPublic,
     SensorUpdateRequestBody,

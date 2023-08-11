@@ -4,9 +4,6 @@ The general purpose: fetch the data from the external source and parse it
 using the specific platform parser.
 """
 
-import asyncio
-from typing import Coroutine
-
 from loguru import logger
 
 from src.application.data_lake import data_lake

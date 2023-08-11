@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, Iterable
+from typing import Callable
 
 from fastapi import FastAPI
 from loguru import logger
