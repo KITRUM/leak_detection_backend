@@ -9,6 +9,7 @@ from src.domain.templates import (
     TemplateUncommited,
 )
 from src.domain.templates import services as templates_services
+from src.infrastructure.constants import DEFAULT_OPENAPI_RESPONSE
 from src.infrastructure.contracts import Response, ResponseMulti
 from src.infrastructure.database import transaction
 
@@ -22,7 +23,9 @@ router = APIRouter(prefix="", tags=["Templates"])
 
 
 @router.post(
-    "/platforms/{platform_id}/templates", status_code=status.HTTP_201_CREATED
+    "/platforms/{platform_id}/templates",
+    status_code=status.HTTP_201_CREATED,
+    responses={**DEFAULT_OPENAPI_RESPONSE},
 )
 @transaction
 async def template_create(
@@ -39,7 +42,10 @@ async def template_create(
     return Response[TemplatePublic](result=template_public)
 
 
-@router.get("/platforms/{platform_id}/templates")
+@router.get(
+    "/platforms/{platform_id}/templates",
+    responses={**DEFAULT_OPENAPI_RESPONSE},
+)
 @transaction
 async def templates_list(
     _: Request, platform_id: int
@@ -57,7 +63,7 @@ async def templates_list(
     return ResponseMulti[TemplatePublic](result=templates_public)
 
 
-@router.get("/templates/{template_id}")
+@router.get("/templates/{template_id}", responses={**DEFAULT_OPENAPI_RESPONSE})
 @transaction
 async def template_retrieve(_: Request, template_id: int):
     """Return the list of sensors within the template."""
@@ -68,7 +74,9 @@ async def template_retrieve(_: Request, template_id: int):
     return Response[TemplatePublic](result=template_public)
 
 
-@router.patch("/templates/{template_id}")
+@router.patch(
+    "/templates/{template_id}", responses={**DEFAULT_OPENAPI_RESPONSE}
+)
 async def template_update(
     _: Request, template_id: int, schema: TemplateUpdateRequestBody
 ):
@@ -82,7 +90,9 @@ async def template_update(
     return Response[TemplatePublic](result=template_public)
 
 
-@router.delete("/templates/{template_id}")
+@router.delete(
+    "/templates/{template_id}", responses={**DEFAULT_OPENAPI_RESPONSE}
+)
 async def template_delete(_: Request, template_id: int):
     """Delete a template."""
 

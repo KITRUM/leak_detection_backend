@@ -14,6 +14,7 @@ from src.domain.sensors import (
 )
 from src.domain.sensors import services as sensors_services
 from src.infrastructure.application import tasks
+from src.infrastructure.constants import DEFAULT_OPENAPI_RESPONSE
 from src.infrastructure.contracts import Response, ResponseMulti
 from src.infrastructure.database import transaction
 
@@ -31,7 +32,11 @@ router = APIRouter(prefix="", tags=["Sensors"])
 # ************************************************
 # ********** CRUD block **********
 # ************************************************
-@router.post("/templates/{template_id}/sensors", status_code=201)
+@router.post(
+    "/templates/{template_id}/sensors",
+    status_code=201,
+    responses={**DEFAULT_OPENAPI_RESPONSE},
+)
 @transaction
 async def sensor_create(
     _: Request, template_id: int, schema: SensorCreateRequestBody
@@ -54,7 +59,9 @@ async def sensor_create(
     return Response[SensorPublic](result=SensorPublic.from_orm(sensor))
 
 
-@router.get("/templates/{template_id}/sensors")
+@router.get(
+    "/templates/{template_id}/sensors", responses={**DEFAULT_OPENAPI_RESPONSE}
+)
 @transaction
 async def sensors_list(
     _: Request, template_id: int
@@ -71,7 +78,7 @@ async def sensors_list(
     return ResponseMulti[SensorPublic](result=sensors_public)
 
 
-@router.get("/sensors/{sensor_id}")
+@router.get("/sensors/{sensor_id}", responses={**DEFAULT_OPENAPI_RESPONSE})
 @transaction
 async def sensor_retrieve(_: Request, sensor_id: int):
     """Return the list of sensors within the sensor."""
@@ -82,7 +89,7 @@ async def sensor_retrieve(_: Request, sensor_id: int):
     return Response[SensorPublic](result=sensor_public)
 
 
-@router.patch("/sensors/{sensor_id}")
+@router.patch("/sensors/{sensor_id}", responses={**DEFAULT_OPENAPI_RESPONSE})
 async def sensor_update(
     _: Request, sensor_id: int, schema: SensorUpdateRequestBody
 ) -> Response[SensorPublic]:
@@ -99,7 +106,11 @@ async def sensor_update(
     return Response[SensorPublic](result=SensorPublic.from_orm(sensor))
 
 
-@router.delete("/sensors/{sensor_id}", status_code=204)
+@router.delete(
+    "/sensors/{sensor_id}",
+    status_code=204,
+    responses={**DEFAULT_OPENAPI_RESPONSE},
+)
 async def sensor_delete(_: Request, sensor_id: int) -> None:
     """Delete the sensor and its configuration.
     Stop the background tasks which process
