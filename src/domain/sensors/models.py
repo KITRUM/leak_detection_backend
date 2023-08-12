@@ -1,7 +1,7 @@
 import numpy as np
 from pydantic import validator
 
-from src.domain.templates.models import Template
+from src.domain.templates import Template
 from src.infrastructure.models import InternalModel
 
 __all__ = (

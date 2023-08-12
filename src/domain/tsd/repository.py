@@ -3,7 +3,6 @@ from typing import AsyncGenerator
 from sqlalchemy import Result, Select, desc, select
 from sqlalchemy.orm import joinedload
 
-from src.domain.tsd.models import Tsd, TsdInDb, TsdUncommited
 from src.infrastructure.database import (
     BaseRepository,
     SensorsTable,
@@ -11,7 +10,9 @@ from src.infrastructure.database import (
 )
 from src.infrastructure.errors import NotFoundError
 
-all = ("SensorsRepository",)
+from .models import Tsd, TsdInDb, TsdUncommited
+
+all = ("TsdRepository",)
 
 
 class TsdRepository(BaseRepository[TimeSeriesDataTable]):

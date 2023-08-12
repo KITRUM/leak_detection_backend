@@ -8,8 +8,7 @@ from stumpy.aampi import aampi
 from src.config import settings
 from src.domain.tsd import Tsd
 from src.infrastructure.cache import Cache
-from src.infrastructure.database import AnomalyDetectionsTable
-from src.infrastructure.database.services.transaction import transaction
+from src.infrastructure.database import AnomalyDetectionsTable, transaction
 from src.infrastructure.errors import NotFoundError, UnprocessableError
 
 from .constants import (

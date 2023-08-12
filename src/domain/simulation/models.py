@@ -3,7 +3,7 @@ from numpy.typing import NDArray
 
 from src.domain.anomaly_detection import AnomalyDetectionInDb
 from src.domain.sensors import Sensor
-from src.infrastructure.database.tables import SimulationDetectionRatesTable
+from src.infrastructure.database import SimulationDetectionRatesTable
 from src.infrastructure.models import InternalModel
 
 __all__ = (

@@ -6,15 +6,13 @@ from typing import Deque
 from src.application.data_lake import data_lake
 from src.domain.anomaly_detection import AnomalyDetection, AnomalyDeviation
 from src.domain.events.sensors import (
+    ANOMALY_DEVIATION_TO_EVENT_TYPE_MAPPING,
     Event,
     EventType,
     EventUncommited,
     services,
 )
-from src.domain.events.sensors.models import (
-    ANOMALY_DEVIATION_TO_EVENT_TYPE_MAPPING,
-)
-from src.infrastructure.errors.base import BaseError
+from src.infrastructure.errors import BaseError
 
 LAST_SENSORS_EVENTS_TYPES: dict[int, Deque[EventType]] = defaultdict(
     partial(deque, maxlen=3)  # type: ignore[arg-type]

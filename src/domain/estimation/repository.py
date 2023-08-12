@@ -2,15 +2,13 @@ from typing import AsyncGenerator
 
 from sqlalchemy import Result, Select, select
 
-from src.domain.estimation.models import (
-    EstimationSummary,
-    EstimationSummaryUncommited,
-)
 from src.infrastructure.database import (
     BaseRepository,
     EstimationsSummariesTable,
 )
 from src.infrastructure.errors import NotFoundError
+
+from .models import EstimationSummary, EstimationSummaryUncommited
 
 all = ("EstimationsSummariesRepository",)
 

@@ -1,7 +1,6 @@
 from sqlalchemy import delete
 
-from src.infrastructure.database import TemplatesEventsTable
-from src.infrastructure.database.services.transaction import transaction
+from src.infrastructure.database import TemplatesEventsTable, transaction
 
 from .models import Event, EventInDb, EventUncommited
 from .repository import TemplatesEventsRepository

@@ -3,17 +3,18 @@ from typing import AsyncGenerator
 from sqlalchemy import Result, Select, select
 from sqlalchemy.orm import joinedload
 
-from src.domain.anomaly_detection.models import (
-    AnomalyDetection,
-    AnomalyDetectionInDb,
-    AnomalyDetectionUncommited,
-)
 from src.infrastructure.database import (
     AnomalyDetectionsTable,
     BaseRepository,
     TimeSeriesDataTable,
 )
 from src.infrastructure.errors import NotFoundError
+
+from .models import (
+    AnomalyDetection,
+    AnomalyDetectionInDb,
+    AnomalyDetectionUncommited,
+)
 
 all = ("AnomalyDetectionRepository",)
 

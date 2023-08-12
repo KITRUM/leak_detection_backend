@@ -6,7 +6,6 @@ from fastapi import APIRouter, FastAPI
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 
-from src.infrastructure.application import middlewares
 from src.infrastructure.errors import (
     BaseError,
     custom_base_errors_handler,
@@ -14,6 +13,8 @@ from src.infrastructure.errors import (
     pydantic_validation_errors_handler,
     python_base_error_handler,
 )
+
+from . import middlewares
 
 __all__ = ("create",)
 

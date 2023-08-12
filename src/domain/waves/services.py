@@ -2,7 +2,7 @@ from csv import DictReader
 from functools import lru_cache
 from pathlib import Path
 
-from src.domain.waves.models import Wave
+from .models import Wave
 
 
 @lru_cache(maxsize=1)

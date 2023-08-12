@@ -1,15 +1,16 @@
 from sqlalchemy import Result, Select, select
 from sqlalchemy.orm import joinedload
 
-from src.domain.simulation.models import (
-    SimulationDetectionRateInDb,
-    SimulationDetectionRateUncommited,
-)
 from src.infrastructure.database import (
     BaseRepository,
     SimulationDetectionRatesTable,
 )
 from src.infrastructure.errors import NotFoundError
+
+from .models import (
+    SimulationDetectionRateInDb,
+    SimulationDetectionRateUncommited,
+)
 
 all = ("SimulationDetectionRatesRepository",)
 

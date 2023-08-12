@@ -1,4 +1,4 @@
-from src.infrastructure.database.services.transaction import transaction
+from src.infrastructure.database import transaction
 
 from .models import Template, TemplatePartialUpdateSchema
 from .repository import TemplatesRepository

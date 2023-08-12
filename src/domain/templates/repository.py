@@ -3,8 +3,7 @@ from typing import AsyncGenerator
 from sqlalchemy import Result, Select, func, select
 
 from src.infrastructure.database import BaseRepository, TemplatesTable
-from src.infrastructure.errors import NotFoundError
-from src.infrastructure.errors.base import UnprocessableError
+from src.infrastructure.errors import NotFoundError, UnprocessableError
 
 from .models import Template, TemplatePartialUpdateSchema, TemplateUncommited
 
