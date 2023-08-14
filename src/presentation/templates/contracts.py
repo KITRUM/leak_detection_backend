@@ -123,6 +123,7 @@ class TemplatePublic(PublicModel):
     """
 
     id: int
+    name: str
 
     currents_path: Path
     waves_path: Path
