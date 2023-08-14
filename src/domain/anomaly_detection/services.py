@@ -10,7 +10,10 @@ from src.domain.tsd import Tsd
 from src.infrastructure.cache import Cache
 from src.infrastructure.database import AnomalyDetectionsTable
 from src.infrastructure.database.services.transaction import transaction
-from src.infrastructure.errors import NotFoundError, UnprocessableError
+from src.infrastructure.errors import (
+    AnomalyDetectionMatrixProfileError,
+    NotFoundError,
+)
 
 from .constants import (
     INITIAL_BASELINE_HIGH,
@@ -112,14 +115,7 @@ def interactive_feedback_mode_processing(
 
     # The processing is skipped if not enough items in the matrix profile
     if matrix_profile.counter < settings.anomaly_detection.window_size:
-        logger.info(
-            (
-                "Anomaly detection processing is skipped "
-                "due to not enough elements in the matrix profile. "
-                f"Current amount: {matrix_profile.counter}"
-            )
-        )
-        raise UnprocessableError
+        raise AnomalyDetectionMatrixProfileError(matrix_profile.counter)
 
     dis = matrix_profile.fb_baseline.P_[-1:]
     dis_lvl = dis / matrix_profile.fb_max_dis * 100
@@ -148,14 +144,7 @@ def normal_mode_processing(
 
     # The processing is skipped if not enough items in the matrix profile
     if matrix_profile.counter < settings.anomaly_detection.window_size:
-        logger.info(
-            (
-                "Anomaly detection processing is skipped "
-                "due to not enough elements in the matrix profile. "
-                f"Current amount: {matrix_profile.counter}"
-            )
-        )
-        raise UnprocessableError
+        raise AnomalyDetectionMatrixProfileError(matrix_profile.counter)
 
     dis = matrix_profile.baseline.P_[-1:]
     dis_lvl = dis / matrix_profile.max_dis * 100
@@ -193,46 +182,25 @@ def _get_last_interactive_feedback_mode_turned_on(sensor_id: int) -> bool:
         return False
 
 
-def process(tsd: Tsd) -> AnomalyDetectionUncommited:
-    """The main anomaly detection processing entrypoint.
-
-    The flow:
-    ---------
-    1. Create or get the matrix profile for the specific sensor.
-    2. Get the last interactive feedback mode from the cache and compare to
+def _process_mode_dispatcher(
+    matrix_profile: MatrixProfile,
+    tsd: Tsd,
+    last_interactive_feedback_mode_turned_on: bool,
+    current_interactive_feedback_mode_turned_on: bool,
+) -> AnomalyDetectionUncommited:
+    """The flow:
+    1. Get the last interactive feedback mode from the cache and compare to
         the current in the sensor.configuration.
-    3. If last is True and current is False, then the last is changed to False
+    2. If last is True and current is False, then the last is changed to False
         and the normal mode is used for processing.
-    4. If last is False and current is True, then the last is changed to True,
+    3. If last is False and current is True, then the last is changed to True,
         the matrix profile is updated/reset,
         the interactive feedback mode is used for processing.
-    5. If last is True and current is True, then nothing is happening and
+    4. If last is True and current is True, then nothing is happening and
         the interactive feedback mode is used for processing.
-    6. If last is False and current is False, then nothing is happening and
+    5. If last is False and current is False, then nothing is happening and
         the normal mode is used for processing.
     """
-
-    # Create default matrix profile if not exist
-    if not (matrix_profile := MATRIX_PROFILES.get(tsd.sensor.id)):
-        logger.success(
-            f"A new matrix profile is created for the sensor {tsd.sensor.id}"
-        )
-        baseline = copy_initial_baseline(level=MatrixProfileLevel.HIGH)
-        matrix_profile = MatrixProfile(
-            max_dis=np.float64(max(baseline.P_)),
-            baseline=baseline,
-            fb_max_dis=np.float64(max(baseline.P_)),
-            fb_baseline=baseline,
-            fb_baseline_start=baseline,
-        )
-        MATRIX_PROFILES[tsd.sensor.id] = matrix_profile
-
-    last_interactive_feedback_mode_turned_on: bool = (
-        _get_last_interactive_feedback_mode_turned_on(tsd.sensor.id)
-    )
-    current_interactive_feedback_mode_turned_on: bool = (
-        tsd.sensor.configuration.interactive_feedback_mode
-    )
 
     if (
         last_interactive_feedback_mode_turned_on is True
@@ -275,3 +243,44 @@ def process(tsd: Tsd) -> AnomalyDetectionUncommited:
     else:
         # True, True option
         return interactive_feedback_mode_processing(matrix_profile, tsd)
+
+
+def process(tsd: Tsd) -> AnomalyDetectionUncommited:
+    """The main anomaly detection processing entrypoint."""
+
+    # Create default matrix profile if not exist
+    if not (matrix_profile := MATRIX_PROFILES.get(tsd.sensor.id)):
+        logger.success(
+            f"A new matrix profile is created for the sensor {tsd.sensor.id}"
+        )
+        baseline = copy_initial_baseline(level=MatrixProfileLevel.HIGH)
+        matrix_profile = MatrixProfile(
+            max_dis=np.float64(max(baseline.P_)),
+            baseline=baseline,
+            fb_max_dis=np.float64(max(baseline.P_)),
+            fb_baseline=baseline,
+            fb_baseline_start=baseline,
+        )
+        MATRIX_PROFILES[tsd.sensor.id] = matrix_profile
+
+    last_interactive_feedback_mode_turned_on: bool = (
+        _get_last_interactive_feedback_mode_turned_on(tsd.sensor.id)
+    )
+    current_interactive_feedback_mode_turned_on: bool = (
+        tsd.sensor.configuration.interactive_feedback_mode
+    )
+
+    try:
+        return _process_mode_dispatcher(
+            matrix_profile,
+            tsd,
+            last_interactive_feedback_mode_turned_on,
+            current_interactive_feedback_mode_turned_on,
+        )
+    except AnomalyDetectionMatrixProfileError as error:
+        logger.info(str(error))
+        return AnomalyDetectionUncommited(
+            value=AnomalyDeviation.UNDEFINED,
+            time_series_data_id=tsd.id,
+            interactive_feedback_mode=False,
+        )
