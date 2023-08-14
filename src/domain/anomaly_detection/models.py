@@ -19,6 +19,7 @@ __all__ = (
 
 
 class AnomalyDeviation(StrEnum):
+    UNDEFINED = auto()
     CRITICAL = auto()
     WARNING = auto()
     OK = auto()
