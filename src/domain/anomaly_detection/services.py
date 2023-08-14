@@ -212,7 +212,6 @@ def _process_mode_dispatcher(
             item=False,
         )
         return normal_mode_processing(matrix_profile, tsd)
-
     elif (
         last_interactive_feedback_mode_turned_on is False
         and current_interactive_feedback_mode_turned_on is True
@@ -233,13 +232,11 @@ def _process_mode_dispatcher(
             item=True,
         )
         return interactive_feedback_mode_processing(matrix_profile, tsd)
-
     elif (
         last_interactive_feedback_mode_turned_on is False
         and current_interactive_feedback_mode_turned_on is False
     ):
         return normal_mode_processing(matrix_profile, tsd)
-
     else:
         # True, True option
         return interactive_feedback_mode_processing(matrix_profile, tsd)

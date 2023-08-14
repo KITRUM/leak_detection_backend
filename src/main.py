@@ -27,13 +27,13 @@ logger.add(
 )
 
 
-# Define shutdown tasks
+# Define startup tasks
 # -------------------------------
 # NOTE: tasks are running in a sequence
-shutdown_tasks: list[Callable] = []
+startup_tasks: list[Callable] = []
 
 if settings.debug is True:
-    shutdown_tasks.extend(
+    startup_tasks.extend(
         [
             domain.anomaly_detection.services.delete_all,
             domain.tsd.services.delete_all,
@@ -43,24 +43,8 @@ if settings.debug is True:
             domain.events.templates.services.delete_all,
         ]
     )
-
-# Adjust the application
-# -------------------------------
-app: FastAPI = application_factory(
-    debug=settings.debug,
-    middlewares=[
-        middlewares.cors,
-    ],
-    routers=(
-        presentation.templates.router,
-        presentation.sensors.router,
-        presentation.tsd.router,
-        presentation.anomaly_detection.router,
-        presentation.estimation.router,
-        presentation.events.sensors.router,
-        presentation.events.templates.router,
-    ),
-    startup_tasks=[
+startup_tasks.extend(
+    [
         application.tsd.create_tasks_for_existed_sensors_process,
         partial(
             tasks.run,
@@ -86,6 +70,26 @@ app: FastAPI = application_factory(
             key="process",
             coro=application.events.process(),
         ),
+    ]
+)
+
+
+# Adjust the application
+# -------------------------------
+app: FastAPI = application_factory(
+    debug=settings.debug,
+    middlewares=[
+        middlewares.cors,
     ],
-    shutdown_tasks=shutdown_tasks,
+    routers=(
+        presentation.templates.router,
+        presentation.sensors.router,
+        presentation.tsd.router,
+        presentation.anomaly_detection.router,
+        presentation.estimation.router,
+        presentation.events.sensors.router,
+        presentation.events.templates.router,
+    ),
+    startup_tasks=startup_tasks,
+    shutdown_tasks=(),
 )
