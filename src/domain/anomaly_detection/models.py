@@ -79,3 +79,6 @@ class MatrixProfile(InternalModel):
     )  # all historical data about feedback
     fb_baseline_start: aampi  #  initial baseline
     fb_baseline: aampi  # same as self.baseline
+
+    # Defines if first `window size` number of values were consumed
+    initial_values_full_capacity: bool = False

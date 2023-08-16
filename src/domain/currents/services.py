@@ -2,7 +2,7 @@ from csv import DictReader
 from functools import lru_cache
 from pathlib import Path
 
-from src.domain.currents.models import Current
+from .models import Current
 
 
 @lru_cache(maxsize=1)

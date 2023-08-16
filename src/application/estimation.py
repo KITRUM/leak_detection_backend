@@ -260,7 +260,7 @@ async def process():
         if platform is None:
             # Define the platform for all detections
             template = await templates_services.get_template_by_id(
-                time_series_data.sensor.template_id,
+                time_series_data.sensor.template.id,
             )
             platform = Platform.get_by_id(template.id)
 

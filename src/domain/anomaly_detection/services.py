@@ -10,12 +10,10 @@ from src.domain.tsd import Tsd
 from src.infrastructure.cache import Cache
 from src.infrastructure.database import AnomalyDetectionsTable
 from src.infrastructure.database.services.transaction import transaction
-from src.infrastructure.errors import (
-    AnomalyDetectionMatrixProfileError,
-    NotFoundError,
-)
+from src.infrastructure.errors import NotFoundError
 
 from .constants import (
+    ANOMALY_DETECTION_MATRIX_PROFILE_ERROR_MESSAGE,
     INITIAL_BASELINE_HIGH,
     INITIAL_BASELINE_LOW,
     CacheNamespace,
@@ -83,7 +81,7 @@ def update_matrix_profile(matrix_profile: MatrixProfile, tsd: Tsd) -> None:
 
     if matrix_profile.counter >= (matrix_profile.window * 2):
         # Reset the matrix profile baseline and last values
-        matrix_profile.counter = 0
+        matrix_profile.counter = matrix_profile.window
         matrix_profile.baseline = copy_initial_baseline(
             matrix_profile.mp_level
         )
@@ -114,8 +112,17 @@ def interactive_feedback_mode_processing(
     matrix_profile.counter += 1
 
     # The processing is skipped if not enough items in the matrix profile
-    if matrix_profile.counter < settings.anomaly_detection.window_size:
-        raise AnomalyDetectionMatrixProfileError(matrix_profile.counter)
+    if matrix_profile.initial_values_full_capacity is False:
+        logger.info(
+            ANOMALY_DETECTION_MATRIX_PROFILE_ERROR_MESSAGE.format(
+                matrix_profile_counter=matrix_profile.counter
+            )
+        )
+        return AnomalyDetectionUncommited(
+            value=AnomalyDeviation.UNDEFINED,
+            time_series_data_id=tsd.id,
+            interactive_feedback_mode=True,
+        )
 
     dis = matrix_profile.fb_baseline.P_[-1:]
     dis_lvl = dis / matrix_profile.fb_max_dis * 100
@@ -143,8 +150,17 @@ def normal_mode_processing(
     update_matrix_profile(matrix_profile, tsd)
 
     # The processing is skipped if not enough items in the matrix profile
-    if matrix_profile.counter < settings.anomaly_detection.window_size:
-        raise AnomalyDetectionMatrixProfileError(matrix_profile.counter)
+    if matrix_profile.initial_values_full_capacity is False:
+        logger.info(
+            ANOMALY_DETECTION_MATRIX_PROFILE_ERROR_MESSAGE.format(
+                matrix_profile_counter=matrix_profile.counter
+            )
+        )
+        return AnomalyDetectionUncommited(
+            value=AnomalyDeviation.UNDEFINED,
+            time_series_data_id=tsd.id,
+            interactive_feedback_mode=False,
+        )
 
     dis = matrix_profile.baseline.P_[-1:]
     dis_lvl = dis / matrix_profile.max_dis * 100
@@ -163,7 +179,9 @@ def normal_mode_processing(
     )
 
 
-def _get_last_interactive_feedback_mode_turned_on(sensor_id: int) -> bool:
+def _get_or_create_last_interactive_feedback_mode_turned_on(
+    sensor_id: int,
+) -> bool:
     """Get last interactive feedback mode status from the cache.
     If not exist - create a new record base on sensor id.
     """
@@ -260,24 +278,24 @@ def process(tsd: Tsd) -> AnomalyDetectionUncommited:
         )
         MATRIX_PROFILES[tsd.sensor.id] = matrix_profile
 
+    # For the first `window size` number of items we receive it is needed
+    # skip processing for populating the first matrix profile
+    if (
+        matrix_profile.initial_values_full_capacity is False
+        and matrix_profile.counter >= settings.anomaly_detection.window_size
+    ):
+        matrix_profile.initial_values_full_capacity = True
+
     last_interactive_feedback_mode_turned_on: bool = (
-        _get_last_interactive_feedback_mode_turned_on(tsd.sensor.id)
+        _get_or_create_last_interactive_feedback_mode_turned_on(tsd.sensor.id)
     )
     current_interactive_feedback_mode_turned_on: bool = (
         tsd.sensor.configuration.interactive_feedback_mode
     )
 
-    try:
-        return _process_mode_dispatcher(
-            matrix_profile,
-            tsd,
-            last_interactive_feedback_mode_turned_on,
-            current_interactive_feedback_mode_turned_on,
-        )
-    except AnomalyDetectionMatrixProfileError as error:
-        logger.info(str(error))
-        return AnomalyDetectionUncommited(
-            value=AnomalyDeviation.UNDEFINED,
-            time_series_data_id=tsd.id,
-            interactive_feedback_mode=False,
-        )
+    return _process_mode_dispatcher(
+        matrix_profile,
+        tsd,
+        last_interactive_feedback_mode_turned_on,
+        current_interactive_feedback_mode_turned_on,
+    )
