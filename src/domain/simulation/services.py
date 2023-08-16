@@ -11,7 +11,7 @@ from src.infrastructure.database import (
 
 from .models import (
     Leakage,
-    SimulationDetectionRateInDb,
+    SimulationDetectionRateFlat,
     SimulationDetectionRateUncommited,
 )
 from .repository import SimulationDetectionRatesRepository
@@ -29,8 +29,8 @@ async def delete_all():
 @transaction
 async def save_simulation_detection_rate(
     schema: SimulationDetectionRateUncommited,
-) -> SimulationDetectionRateInDb:
-    instance: SimulationDetectionRateInDb = (
+) -> SimulationDetectionRateFlat:
+    instance: SimulationDetectionRateFlat = (
         await SimulationDetectionRatesRepository().create(schema)
     )
 

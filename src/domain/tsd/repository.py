@@ -3,7 +3,7 @@ from typing import AsyncGenerator
 from sqlalchemy import Result, Select, desc, select
 from sqlalchemy.orm import joinedload
 
-from src.domain.tsd.models import Tsd, TsdInDb, TsdUncommited
+from src.domain.tsd.models import Tsd, TsdFlat, TsdUncommited
 from src.infrastructure.database import (
     BaseRepository,
     SensorsTable,
@@ -17,7 +17,7 @@ all = ("SensorsRepository",)
 class TsdRepository(BaseRepository[TimeSeriesDataTable]):
     schema_class = TimeSeriesDataTable
 
-    async def last(self) -> TsdInDb:
+    async def last(self) -> TsdFlat:
         """Fetch the time_series_data by id."""
 
         query: Select = select(self.schema_class).order_by(
@@ -28,7 +28,7 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
         if not (schema := result.scalars().one_or_none()):
             raise NotFoundError
 
-        return TsdInDb.from_orm(schema)
+        return TsdFlat.from_orm(schema)
 
     async def get(self, id_: int) -> Tsd:
         """Fetch the time_series_data by id."""
@@ -50,16 +50,16 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
 
         return Tsd.from_orm(schema)
 
-    async def create(self, schema: TsdUncommited) -> TsdInDb:
+    async def create(self, schema: TsdUncommited) -> TsdFlat:
         """Create a new record in database."""
 
         _schema: TimeSeriesDataTable = await self._save(
             self.schema_class(**schema.dict())
         )
 
-        return TsdInDb.from_orm(_schema)
+        return TsdFlat.from_orm(_schema)
 
-    async def by_sensor(self, sensor_id: int) -> AsyncGenerator[TsdInDb, None]:
+    async def by_sensor(self, sensor_id: int) -> AsyncGenerator[TsdFlat, None]:
         """Fetch all time series data by sensor from database.
         The sensor table is joined.
         """
@@ -74,11 +74,11 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
             raise NotFoundError
 
         for schema in schemas:
-            yield TsdInDb.from_orm(schema)
+            yield TsdFlat.from_orm(schema)
 
     async def fitler_last_by_sensor(
         self, sensor_id: int, id_: int, limit: int
-    ) -> AsyncGenerator[TsdInDb, None]:
+    ) -> AsyncGenerator[TsdFlat, None]:
         """Fetch last values until the `id_` isntance in the database.
         If the limit is not set, then the anomaly detection window size
         setting is used.
@@ -101,4 +101,4 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
             raise NotFoundError
 
         for schema in schemas:
-            yield TsdInDb.from_orm(schema)
+            yield TsdFlat.from_orm(schema)

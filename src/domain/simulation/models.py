@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.typing import NDArray
 
-from src.domain.anomaly_detection import AnomalyDetectionInDb
+from src.domain.anomaly_detection import AnomalyDetectionFlat
 from src.domain.sensors import Sensor
 from src.infrastructure.database.tables import SimulationDetectionRatesTable
 from src.infrastructure.models import InternalModel
@@ -11,7 +11,7 @@ __all__ = (
     "Leakage",
     "Detection",
     "SimulationDetectionRateUncommited",
-    "SimulationDetectionRateInDb",
+    "SimulationDetectionRateFlat",
 )
 
 
@@ -70,14 +70,14 @@ class SimulationDetectionRateUncommited(InternalModel):
     concentrations: str
 
 
-class SimulationDetectionRateInDb(InternalModel):
+class SimulationDetectionRateFlat(InternalModel):
     """This model represents the detection rate database representation.
     It uses optimized numpy data types, leakage representation
     and nested anomaly detection model.
     """
 
     id: int
-    anomaly_detection: AnomalyDetectionInDb
+    anomaly_detection: AnomalyDetectionFlat
     leakage: Leakage
     rate: np.float64
     concentrations: NDArray[np.float64]
@@ -85,12 +85,12 @@ class SimulationDetectionRateInDb(InternalModel):
     @classmethod
     def from_orm(
         cls, schema: SimulationDetectionRatesTable
-    ) -> "SimulationDetectionRateInDb":
+    ) -> "SimulationDetectionRateFlat":
         """Convert ORM schema representation into the internal model."""
 
         return cls(
             id=schema.id,
-            anomaly_detection=AnomalyDetectionInDb.from_orm(
+            anomaly_detection=AnomalyDetectionFlat.from_orm(
                 schema.anomaly_detection
             ),
             leakage=Leakage(

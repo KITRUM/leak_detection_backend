@@ -8,7 +8,7 @@ __all__ = (
     "SensorBase",
     "SensorUncommited",
     "SensorUpdatePartialSchema",
-    "SensorInDb",
+    "SensorFlat",
     "Sensor",
     "SensorConfigurationUncommited",
     "SensorConfigurationFlat",
@@ -76,7 +76,7 @@ class SensorUpdatePartialSchema(InternalModel):
     z: np.float64 | None = None
 
 
-class SensorInDb(SensorUncommited):
+class SensorFlat(SensorUncommited):
     """The internal sensor representation."""
 
     id: int

@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 
 from src.domain.anomaly_detection.models import (
     AnomalyDetection,
-    AnomalyDetectionInDb,
+    AnomalyDetectionFlat,
     AnomalyDetectionUncommited,
 )
 from src.infrastructure.database import (
@@ -38,14 +38,14 @@ class AnomalyDetectionRepository(BaseRepository[AnomalyDetectionsTable]):
 
     async def create(
         self, schema: AnomalyDetectionUncommited
-    ) -> AnomalyDetectionInDb:
+    ) -> AnomalyDetectionFlat:
         """Create a new record in database."""
 
         _schema: AnomalyDetectionsTable = await self._save(
             self.schema_class(**schema.dict())
         )
 
-        return AnomalyDetectionInDb.from_orm(_schema)
+        return AnomalyDetectionFlat.from_orm(_schema)
 
     async def by_sensor(
         self, sensor_id: int

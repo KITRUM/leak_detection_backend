@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from stumpy.aampi import aampi
 
 from src.config import settings
-from src.domain.tsd import TsdInDb
+from src.domain.tsd import TsdFlat
 from src.infrastructure.models import InternalModel
 
 __all__ = (
@@ -13,7 +13,7 @@ __all__ = (
     "AnomalyDeviation",
     "MatrixProfileLevel",
     "AnomalyDetectionUncommited",
-    "AnomalyDetectionInDb",
+    "AnomalyDetectionFlat",
     "AnomalyDetection",
 )
 
@@ -47,7 +47,7 @@ class AnomalyDetectionUncommited(AnomalyDetectionBase, InternalModel):
     time_series_data_id: int
 
 
-class AnomalyDetectionInDb(AnomalyDetectionUncommited):
+class AnomalyDetectionFlat(AnomalyDetectionUncommited):
     """The internal representation of
     the existed Anomaly detection instance.
     """
@@ -59,7 +59,7 @@ class AnomalyDetection(AnomalyDetectionBase, InternalModel):
     """The internal representation of reach Anomaly Detection."""
 
     id: int
-    time_series_data: TsdInDb
+    time_series_data: TsdFlat
 
 
 class MatrixProfile(InternalModel):

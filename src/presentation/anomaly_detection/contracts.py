@@ -1,7 +1,7 @@
 from pydantic import Field
 
 from src.domain.anomaly_detection import AnomalyDeviation
-from src.domain.tsd import TsdInDb
+from src.domain.tsd import TsdFlat
 from src.infrastructure.models import PublicModel
 
 
@@ -10,7 +10,7 @@ class AnomalyDetectionPublic(PublicModel):
     value: AnomalyDeviation = Field(
         description="Define the enum of possible deviations"
     )
-    time_series_data: TsdInDb = Field(
+    time_series_data: TsdFlat = Field(
         description=(
             "Determine the time series data object "
             "that is related to this process"

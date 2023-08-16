@@ -17,7 +17,7 @@ from src.domain.simulation import (
     Detection,
     Leakage,
     RegressionProcessor,
-    SimulationDetectionRateInDb,
+    SimulationDetectionRateFlat,
     SimulationDetectionRateUncommited,
 )
 from src.domain.simulation import services as simulation_services
@@ -178,7 +178,7 @@ async def process():
         # ------------------------------------------------
         # ========== Detection rates processing ==========
         # ------------------------------------------------
-        simulation_detection_rates: list[SimulationDetectionRateInDb] = []
+        simulation_detection_rates: list[SimulationDetectionRateFlat] = []
         for detection in detections:
             above_limit = np.zeros(detection.concentrations.shape)
             above_limit[
@@ -198,7 +198,7 @@ async def process():
             )
 
             # TODO: change to batch save all detections
-            instance: SimulationDetectionRateInDb = (
+            instance: SimulationDetectionRateFlat = (
                 await (
                     simulation_services.save_simulation_detection_rate(schema)
                 )
