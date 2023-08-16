@@ -117,7 +117,7 @@ async def process():
              since it is required by the processing algorithm.
     """
 
-    # NOTE: Skip if settings are set
+    # NOTE: Skip if settings are set to False
     if not settings.simulation.turn_on:
         return
 
