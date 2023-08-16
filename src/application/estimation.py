@@ -22,9 +22,9 @@ from src.domain.estimation import (
     services,
 )
 from src.domain.platforms import Platform, TagInfo
-from src.domain.simulation import SimulationDetectionRateInDb
+from src.domain.simulation import SimulationDetectionRateFlat
 from src.domain.templates import services as templates_services
-from src.domain.tsd import Tsd, TsdInDb
+from src.domain.tsd import Tsd, TsdFlat
 from src.domain.tsd import services as tsd_services
 
 __all__ = ("process",)
@@ -45,7 +45,7 @@ class DeprecatedEstimationProcessor:
         anomaly_severity: AnomalyDeviation,
         anomaly_concentrations: NDArray[np.float64],
         anomaly_timestamps: list[str],
-        detection_rates: list[SimulationDetectionRateInDb],
+        detection_rates: list[SimulationDetectionRateFlat],
         simulator_concentrations: NDArray,
         sensor_number: int,
     ) -> None:
@@ -252,7 +252,7 @@ async def process():
         )
 
         last_time_series_data: list[
-            TsdInDb
+            TsdFlat
         ] = await tsd_services.get_last_tsd_set(
             sensor_id=time_series_data.sensor.id, id_=time_series_data.id
         )

@@ -2,7 +2,7 @@ from sqlalchemy import Result, Select, select
 from sqlalchemy.orm import joinedload
 
 from src.domain.simulation.models import (
-    SimulationDetectionRateInDb,
+    SimulationDetectionRateFlat,
     SimulationDetectionRateUncommited,
 )
 from src.infrastructure.database import (
@@ -19,7 +19,7 @@ class SimulationDetectionRatesRepository(
 ):
     schema_class = SimulationDetectionRatesTable
 
-    async def get(self, id_: int) -> SimulationDetectionRateInDb:
+    async def get(self, id_: int) -> SimulationDetectionRateFlat:
         """Fetch the database record by id."""
 
         query: Select = (
@@ -33,11 +33,11 @@ class SimulationDetectionRatesRepository(
         if not (schema := result.scalars().one_or_none()):
             raise NotFoundError
 
-        return SimulationDetectionRateInDb.from_orm(schema)
+        return SimulationDetectionRateFlat.from_orm(schema)
 
     async def create(
         self, schema: SimulationDetectionRateUncommited
-    ) -> SimulationDetectionRateInDb:
+    ) -> SimulationDetectionRateFlat:
         """Create a new record in database."""
 
         _schema: SimulationDetectionRatesTable = await self._save(

@@ -6,7 +6,7 @@ from pydantic import validator
 from src.domain.sensors import Sensor
 from src.infrastructure.models import InternalModel
 
-__all__ = ("TsdRaw", "TsdUncommited", "TsdInDb", "Tsd")
+__all__ = ("TsdRaw", "TsdUncommited", "TsdFlat", "Tsd")
 
 
 def _convert_ppmv_to_internal_callback(
@@ -41,7 +41,7 @@ class TsdUncommited(InternalModel):
         return f"🕑 TSD: {self.timestamp} [{self.ppmv} ppmv]"
 
 
-class TsdInDb(TsdUncommited):
+class TsdFlat(TsdUncommited):
     """The internal representation of the existed Time Series Data."""
 
     id: int
@@ -51,7 +51,7 @@ class TsdInDb(TsdUncommited):
     )
 
 
-class Tsd(TsdInDb):
+class Tsd(TsdFlat):
     """The internal representation of reach Time Series Data."""
 
     sensor: Sensor

@@ -3,7 +3,7 @@ from sqlalchemy import delete
 from src.infrastructure.database import SensorsEventsTable
 from src.infrastructure.database.services.transaction import transaction
 
-from .models import Event, EventInDb, EventUncommited
+from .models import Event, EventFlat, EventUncommited
 from .repository import SensorsEventsRepository
 
 
@@ -19,7 +19,7 @@ async def create(schema: EventUncommited) -> Event:
     """Create the database instance and return the reach datamodel."""
 
     repository = SensorsEventsRepository()
-    instance: EventInDb = await repository.create(schema)
+    instance: EventFlat = await repository.create(schema)
 
     return await repository.get(instance.id)
 

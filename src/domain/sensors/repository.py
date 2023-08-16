@@ -16,7 +16,7 @@ from .models import (
     SensorConfigurationFlat,
     SensorConfigurationUncommited,
     SensorConfigurationUpdatePartialSchema,
-    SensorInDb,
+    SensorFlat,
     SensorUncommited,
     SensorUpdatePartialSchema,
 )
@@ -124,7 +124,7 @@ class SensorsRepository(BaseRepository[SensorsTable]):
 
     async def update_partially(
         self, id_: int, schema: SensorUpdatePartialSchema
-    ) -> SensorInDb:
+    ) -> SensorFlat:
         if not (payload := schema.dict(exclude_none=True, exclude_unset=True)):
             raise UnprocessableError(
                 message="Can not update without any payload"
@@ -132,7 +132,7 @@ class SensorsRepository(BaseRepository[SensorsTable]):
 
         _schema = await self._update(key="id", value=id_, payload=payload)
 
-        return SensorInDb.from_orm(_schema)
+        return SensorFlat.from_orm(_schema)
 
     async def all(self) -> AsyncGenerator[Sensor, None]:
         """Fetch all sensors from database."""

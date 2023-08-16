@@ -6,7 +6,7 @@ from sqlalchemy.orm import joinedload
 from src.infrastructure.database import BaseRepository, SensorsEventsTable
 from src.infrastructure.errors import NotFoundError
 
-from .models import Event, EventInDb, EventUncommited
+from .models import Event, EventFlat, EventUncommited
 
 all = ("SensorsEventsRepository",)
 
@@ -29,14 +29,14 @@ class SensorsEventsRepository(BaseRepository[SensorsEventsTable]):
 
         return Event.from_orm(schema)
 
-    async def create(self, schema: EventUncommited) -> EventInDb:
+    async def create(self, schema: EventUncommited) -> EventFlat:
         """Create a new record in database."""
 
         _schema: SensorsEventsTable = await self._save(
             self.schema_class(**schema.dict())
         )
 
-        return EventInDb.from_orm(_schema)
+        return EventFlat.from_orm(_schema)
 
     async def by_sensor(self, sensor_id: int) -> AsyncGenerator[Event, None]:
         """Fetch all anomaly detections for the sensor."""

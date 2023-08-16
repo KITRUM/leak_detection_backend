@@ -6,7 +6,7 @@ from src.infrastructure.models import InternalModel
 __all__ = (
     "EventType",
     "EventUncommited",
-    "EventInDb",
+    "EventFlat",
     "Event",
 )
 
@@ -27,7 +27,7 @@ class EventUncommited(InternalModel):
     template_id: int
 
 
-class EventInDb(InternalModel):
+class EventFlat(InternalModel):
     id: int
     type: EventType
     template_id: int
