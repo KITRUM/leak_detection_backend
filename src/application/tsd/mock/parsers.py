@@ -1,5 +1,6 @@
-from datetime import datetime
 from typing import Callable
+
+from dateutil.parser import parse as datetime_parser
 
 from src.domain.platforms import Platform
 from src.domain.tsd import TsdRaw
@@ -7,9 +8,6 @@ from src.infrastructure.errors.base import NotFoundError
 
 __all__ = ("PlatformParserCallback", "get_parser")
 
-
-RAW_TSD_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-RAW_TSD_DATE_FORMAT_MILISECONDS = "%Y-%m-%d %H:%M:%S.%f"
 
 PlatformParserCallback = Callable[[list[str]], TsdRaw]
 
@@ -26,10 +24,7 @@ def trestakk_parser(raw_data: list[str]) -> TsdRaw:
     """
 
     return TsdRaw(
-        timestamp=datetime.strptime(
-            raw_data[1], RAW_TSD_DATE_FORMAT_MILISECONDS
-        ),
-        ppmv=float(raw_data[2]),
+        timestamp=datetime_parser(raw_data[1]), ppmv=float(raw_data[2])
     )
 
 
@@ -45,8 +40,7 @@ def snorre_parser(raw_data: list[str]) -> TsdRaw:
     """
 
     return TsdRaw(
-        timestamp=datetime.strptime(raw_data[1], RAW_TSD_DATE_FORMAT),
-        ppmv=float(raw_data[2]),
+        timestamp=datetime_parser(raw_data[1]), ppmv=float(raw_data[2])
     )
 
 
