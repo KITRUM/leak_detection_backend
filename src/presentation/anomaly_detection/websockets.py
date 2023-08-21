@@ -19,7 +19,7 @@ router = APIRouter(prefix="/sensors", tags=["Anomaly detections"])
 async def anomaly_detections_for_simulation(ws: WebSocket, sensor_id: int):
     await ws.accept()
     logger.success(
-        "Opening WS connection for Anomaly detections fetching "
+        "Opening WS connection for anomaly detections fetching "
         f"from sensor: {sensor_id}"
     )
 
