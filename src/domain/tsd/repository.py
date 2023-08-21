@@ -17,19 +17,6 @@ all = ("SensorsRepository",)
 class TsdRepository(BaseRepository[TimeSeriesDataTable]):
     schema_class = TimeSeriesDataTable
 
-    async def last(self) -> TsdFlat:
-        """Fetch the time_series_data by id."""
-
-        query: Select = select(self.schema_class).order_by(
-            desc(self.schema_class.id)
-        )
-        result: Result = await self._session.execute(query)
-
-        if not (schema := result.scalars().one_or_none()):
-            raise NotFoundError
-
-        return TsdFlat.from_orm(schema)
-
     async def get(self, id_: int) -> Tsd:
         """Fetch the time_series_data by id."""
 
