@@ -25,12 +25,17 @@ async def create(schema: EventUncommited) -> Event:
 
 
 @transaction
-async def get_historical_data(
-    sensor_id: int,
-) -> list[Event]:
+async def get_historical_data(sensor_id: int) -> list[Event]:
     """Get the historical data."""
 
     return [
         instance
         async for instance in SensorsEventsRepository().by_sensor(sensor_id)
     ]
+
+
+@transaction
+async def get_last(sensor_id: int) -> EventFlat:
+    """Get the last item."""
+
+    return await SensorsEventsRepository().last(sensor_id)
