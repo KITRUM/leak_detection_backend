@@ -102,8 +102,8 @@ data_lake = DataLake(
         partial(LakeItem[EstimationSummary], limit=10)
     ),
     # Events
-    events_by_sensor=defaultdict(partial(LakeItem[sensors.Event], limit=3)),
+    events_by_sensor=defaultdict(partial(LakeItem[sensors.Event], limit=1)),
     events_by_template=defaultdict(
-        partial(LakeItem[templates.Event], limit=3)
+        partial(LakeItem[templates.Event], limit=1)
     ),
 )
