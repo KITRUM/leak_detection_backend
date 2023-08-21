@@ -1,6 +1,6 @@
 from typing import AsyncGenerator
 
-from sqlalchemy import Result, Select, select
+from sqlalchemy import Result, Select, desc, select
 from sqlalchemy.orm import joinedload
 
 from src.infrastructure.database import BaseRepository, SensorsEventsTable
@@ -56,3 +56,17 @@ class SensorsEventsRepository(BaseRepository[SensorsEventsTable]):
 
         for schema in schemas:
             yield Event.from_orm(schema)
+
+    async def last(self, sensor_id: int) -> EventFlat:
+        query: Select = (
+            select(self.schema_class)
+            .where(getattr(self.schema_class, "sensor_id") == sensor_id)
+            .order_by(desc(self.schema_class.id))
+            .limit(1)
+        )
+        result: Result = await self._session.execute(query)
+
+        if not (schema := result.scalars().one_or_none()):
+            raise NotFoundError
+
+        return EventFlat.from_orm(schema)

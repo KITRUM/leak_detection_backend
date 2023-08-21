@@ -4,8 +4,6 @@ The general purpose: fetch the data from the external source and parse it
 using the specific platform parser.
 """
 
-from loguru import logger
-
 from src.application.data_lake import data_lake
 from src.config import settings
 from src.domain.sensors import Sensor, SensorsRepository
@@ -32,8 +30,6 @@ async def _mock_process_time_series_data(sensor):
             continue
 
         tsd_raw: TsdRaw = parser(row)
-
-        logger.debug(f"TSD processing: {sensor.id}: {tsd_raw.ppmv}")
 
         # HACK: Some files have pick values that we'd like
         #       to avoide for the demo

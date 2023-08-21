@@ -44,4 +44,5 @@ ANOMALY_DEVIATION_TO_EVENT_TYPE_MAPPING: dict[AnomalyDeviation, EventType] = {
     AnomalyDeviation.CRITICAL: EventType.CRITICAL,
     AnomalyDeviation.WARNING: EventType.OK,
     AnomalyDeviation.OK: EventType.OK,
+    AnomalyDeviation.UNDEFINED: EventType.OK,
 }
