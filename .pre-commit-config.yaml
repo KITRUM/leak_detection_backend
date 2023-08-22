@@ -1,0 +1,32 @@
+fail_fast: true
+
+repos:
+  - repo: local
+    hooks:
+      - id: black
+        name: black
+        entry: black --check .
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: isort
+        name: isort
+        entry: isort --check-only .
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: ruff
+        name: ruff linter
+        entry: python -m ruff .
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: mypy
+        name: mypy static analyzer
+        entry: python -m mypy --check-untyped-defs
+        language: system
+        types: [python]
+
