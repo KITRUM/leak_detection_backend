@@ -54,6 +54,12 @@ class AnomalyDetectionSettings(BaseModel):
     warning: int = 200
     alert: int = 500
 
+    # This config determines if we should save the interactive feedback
+    # results after toggling this feature off.
+    # ref: domain/anomaly_detection/services.py:
+    #       _save_interactive_feedback_resutls()
+    interactive_feedback_save_max_limit: int = 1000
+
 
 class SimulationParameters(InternalModel):
     seawater_temperature: np.float64 = np.float64(6.2)
