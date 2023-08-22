@@ -32,6 +32,16 @@ async def process(anomaly_detection: AnomalyDetection) -> Event | None:
         anomaly_detection.value
     ]
 
+    # HACK: Randomize the event type
+    # -------------------------------------
+    # TODO: Remove before commit
+    import random
+
+    current_event_type = random.choice([EventType.CRITICAL, EventType.OK])
+    print(f"{current_event_type=}")
+    # HACK: End of the hack
+    # -------------------------------------
+
     with suppress(IndexError):
         if current_event_type == LAST_SENSORS_EVENTS_TYPES[sensor_id][-1]:
             return None
