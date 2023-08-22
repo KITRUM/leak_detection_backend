@@ -8,7 +8,7 @@ run:
 cq:
 	python -m black ./
 	python -m ruff ./
-	python -misort --check ./
+	python -m isort ./
 
 
 .PHONY: types
@@ -19,9 +19,9 @@ types:
 
 .PHONY: check
 check:
-	python -m black ./
 	python -m ruff ./
-	python -misort --check ./
+	python -m black --check ./
+	python -m isort --check ./
 	python -m mypy --check-untyped-defs ./
 
 
