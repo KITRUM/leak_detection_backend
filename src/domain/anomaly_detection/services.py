@@ -109,11 +109,13 @@ def interactive_feedback_mode_processing(
     is turned on.
     """
 
+    print(f"Interactive feedback mode processing for {tsd.id}")
+
     # Update the matrix profile baseline
     if matrix_profile.counter >= (matrix_profile.window * 2):
         # Reset the matrix profile baseline and last values
         matrix_profile.counter = matrix_profile.window
-        matrix_profile.baseline = copy_initial_baseline(
+        matrix_profile.fb_baseline = copy_initial_baseline(
             matrix_profile.mp_level
         )
         matrix_profile.last_values = matrix_profile.last_values[
@@ -222,7 +224,7 @@ def _save_interactive_feedback_resutls(matrix_profile: MatrixProfile):
 
     matrix_profile.baseline = copy_initial_baseline(matrix_profile.mp_level)
 
-    if (
+    if matrix_profile.fb_temp and (
         max(matrix_profile.fb_temp)
         >= settings.anomaly_detection.interactive_feedback_save_max_limit
     ):
