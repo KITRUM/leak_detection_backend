@@ -79,6 +79,8 @@ def copy_initial_baseline(
 def update_matrix_profile(matrix_profile: MatrixProfile, tsd: Tsd) -> None:
     """Update the matrix profile with the new data."""
 
+    # WARNING: Works only for the normal mode
+
     if matrix_profile.counter >= (matrix_profile.window * 2):
         # Reset the matrix profile baseline and last values
         matrix_profile.counter = matrix_profile.window
@@ -107,9 +109,22 @@ def interactive_feedback_mode_processing(
     is turned on.
     """
 
-    matrix_profile.baseline.update(tsd.ppmv)
-    matrix_profile.last_values.append(tsd.ppmv)
+    # Update the matrix profile baseline
+    if matrix_profile.counter >= (matrix_profile.window * 2):
+        # Reset the matrix profile baseline and last values
+        matrix_profile.counter = matrix_profile.window
+        matrix_profile.baseline = copy_initial_baseline(
+            matrix_profile.mp_level
+        )
+        matrix_profile.last_values = matrix_profile.last_values[
+            -matrix_profile.window :
+        ]
+        for value in matrix_profile.last_values:
+            matrix_profile.fb_baseline.update(value)
+
+    matrix_profile.fb_baseline.update(tsd.ppmv)
     matrix_profile.counter += 1
+    matrix_profile.last_values.append(tsd.ppmv)
 
     # The processing is skipped if not enough items in the matrix profile
     if matrix_profile.initial_values_full_capacity is False:
@@ -200,6 +215,29 @@ def _get_or_create_last_interactive_feedback_mode_turned_on(
         return False
 
 
+def _save_interactive_feedback_resutls(matrix_profile: MatrixProfile):
+    """After user toggle off the interactive feedback
+    all results have to be saved.
+    """
+
+    matrix_profile.baseline = copy_initial_baseline(matrix_profile.mp_level)
+
+    if (
+        max(matrix_profile.fb_temp)
+        >= settings.anomaly_detection.interactive_feedback_save_max_limit
+    ):
+        return
+
+    matrix_profile.fb_historical += matrix_profile.fb_temp
+
+    for value in matrix_profile.fb_temp:
+        matrix_profile.fb_baseline_start.update(value)
+
+    # Prepare the baseline to the next start
+    matrix_profile.fb_temp = []
+    matrix_profile.fb_max_dis = max(matrix_profile.fb_baseline_start._P)
+
+
 def _process_mode_dispatcher(
     matrix_profile: MatrixProfile,
     tsd: Tsd,
@@ -220,6 +258,7 @@ def _process_mode_dispatcher(
         the normal mode is used for processing.
     """
 
+    # NOTE: Toggle OFF the interactive feedback
     if (
         last_interactive_feedback_mode_turned_on is True
         and current_interactive_feedback_mode_turned_on is False
@@ -229,7 +268,9 @@ def _process_mode_dispatcher(
             key=tsd.sensor.id,
             item=False,
         )
+        _save_interactive_feedback_resutls(matrix_profile)
         return normal_mode_processing(matrix_profile, tsd)
+    # NOTE: Toggle ON the interactive feedback
     elif (
         last_interactive_feedback_mode_turned_on is False
         and current_interactive_feedback_mode_turned_on is True
@@ -250,11 +291,13 @@ def _process_mode_dispatcher(
             item=True,
         )
         return interactive_feedback_mode_processing(matrix_profile, tsd)
+    # NOTE: Toggle OFF is not changed
     elif (
         last_interactive_feedback_mode_turned_on is False
         and current_interactive_feedback_mode_turned_on is False
     ):
         return normal_mode_processing(matrix_profile, tsd)
+    # NOTE: Toggle ON is not changed
     else:
         # True, True option
         return interactive_feedback_mode_processing(matrix_profile, tsd)

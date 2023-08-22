@@ -74,9 +74,12 @@ class MatrixProfile(InternalModel):
     mp_level: MatrixProfileLevel = MatrixProfileLevel.HIGH
     baseline: aampi
     fb_max_dis: np.float64
-    fb_ts: list[np.float64] = Field(
+    fb_historical: list[np.float64] = Field(
         default_factory=list
     )  # all historical data about feedback
+    fb_temp: list[np.float64] = Field(
+        default_factory=list
+    )  # items received during the process
     fb_baseline_start: aampi  #  initial baseline
     fb_baseline: aampi  # same as self.baseline
 
