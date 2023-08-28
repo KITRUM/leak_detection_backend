@@ -121,7 +121,7 @@ follow_imports = 'silent'
 [[tool.mypy.overrides]]
 module = [
     "websockets.exceptions",
-    "stumpy.aampi",
+    "stumpy.*",
 ]
 ignore_missing_imports = true
 
