@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import TypeVar
 
 from sqlalchemy import (
+    BLOB,
     JSON,
     Boolean,
     Column,
@@ -99,6 +100,11 @@ class SensorsConfigurationsTable(Base):
 
     interactive_feedback_mode: bool = Column(
         Boolean, nullable=False, default=False
+    )  # type: ignore[var-annotated]
+
+    initial_anomaly_detection_baseline: bytes = Column(
+        BLOB,
+        nullable=False,
     )  # type: ignore[var-annotated]
 
     sensor = relationship(
