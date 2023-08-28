@@ -31,8 +31,8 @@ async def process():
             continue
 
         # Save a detection to the database
-        anomaly_detection: AnomalyDetection = (
-            await services.save_anomaly_detection(create_schema)
+        anomaly_detection: AnomalyDetection = await services.create(
+            create_schema
         )
 
         # Update the data lake

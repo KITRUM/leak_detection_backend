@@ -1,82 +1,32 @@
-from copy import deepcopy
-
 import numpy as np
 from loguru import logger
-from sqlalchemy import delete
-from stumpy.aampi import aampi
+from stumpy import aampi
 
 from src.config import settings
+from src.domain.sensors.models import Sensor
 from src.domain.tsd import Tsd
 from src.infrastructure.cache import Cache
-from src.infrastructure.database import AnomalyDetectionsTable
-from src.infrastructure.database.services.transaction import transaction
 from src.infrastructure.errors import NotFoundError
 
-from .constants import (
+from ..constants import (
     ANOMALY_DETECTION_MATRIX_PROFILE_ERROR_MESSAGE,
-    INITIAL_BASELINE_HIGH,
-    INITIAL_BASELINE_LOW,
     CacheNamespace,
 )
-from .models import (
-    AnomalyDetection,
+from ..models import (
     AnomalyDetectionUncommited,
     AnomalyDeviation,
     MatrixProfile,
-    MatrixProfileLevel,
 )
-from .repository import AnomalyDetectionRepository
+from .baselines import get_initial_baseline_by_sensor
+
+__all__ = ("process",)
+
 
 # TODO: Should be moved to the infrastructure later.
 MATRIX_PROFILES: dict[int, MatrixProfile] = {}
 
 
-@transaction
-async def save_anomaly_detection(
-    schema: AnomalyDetectionUncommited,
-) -> AnomalyDetection:
-    repository = AnomalyDetectionRepository()
-    instance = await repository.create(schema)
-
-    return await repository.get(instance.id)
-
-
-@transaction
-async def delete_all():
-    """This function is used by the startup hook if debug mode is on."""
-
-    await AnomalyDetectionRepository().execute(delete(AnomalyDetectionsTable))
-
-
-@transaction
-async def get_historical_data(
-    sensor_id: int,
-) -> list[AnomalyDetection]:
-    """Get the historical data."""
-
-    return [
-        instance
-        async for instance in AnomalyDetectionRepository().by_sensor(sensor_id)
-    ]
-
-
-def copy_initial_baseline(
-    level: MatrixProfileLevel = MatrixProfileLevel.HIGH,
-) -> aampi:
-    """Get a deepcopy of the initial baseline."""
-
-    match level:
-        case MatrixProfileLevel.HIGH:
-            baseline = deepcopy(INITIAL_BASELINE_HIGH)
-        case MatrixProfileLevel.LOW:
-            baseline = deepcopy(INITIAL_BASELINE_LOW)
-        case _:
-            raise Exception("Unknown baseline profile leve")
-
-    return baseline
-
-
-def update_matrix_profile(matrix_profile: MatrixProfile, tsd: Tsd) -> None:
+def _update_matrix_profile(matrix_profile: MatrixProfile, tsd: Tsd) -> None:
     """Update the matrix profile with the new data."""
 
     # WARNING: Works only for the normal mode
@@ -84,9 +34,8 @@ def update_matrix_profile(matrix_profile: MatrixProfile, tsd: Tsd) -> None:
     if matrix_profile.counter >= (matrix_profile.window * 2):
         # Reset the matrix profile baseline and last values
         matrix_profile.counter = matrix_profile.window
-        matrix_profile.baseline = copy_initial_baseline(
-            matrix_profile.mp_level
-        )
+
+        matrix_profile.baseline = get_initial_baseline_by_sensor(tsd.sensor)
         matrix_profile.last_values = matrix_profile.last_values[
             -matrix_profile.window :
         ]
@@ -98,9 +47,6 @@ def update_matrix_profile(matrix_profile: MatrixProfile, tsd: Tsd) -> None:
     matrix_profile.last_values.append(tsd.ppmv)
 
 
-# ************************************************
-# ********** Processing **********
-# ************************************************
 def interactive_feedback_mode_processing(
     matrix_profile: MatrixProfile, tsd: Tsd
 ) -> AnomalyDetectionUncommited:
@@ -115,9 +61,10 @@ def interactive_feedback_mode_processing(
     if matrix_profile.counter >= (matrix_profile.window * 2):
         # Reset the matrix profile baseline and last values
         matrix_profile.counter = matrix_profile.window
-        matrix_profile.fb_baseline = copy_initial_baseline(
-            matrix_profile.mp_level
-        )
+
+        # TODO: Get the initial baseline from the sensor instead
+        # ====================================================================
+        matrix_profile.fb_baseline = get_initial_baseline_by_sensor(tsd.sensor)
         matrix_profile.last_values = matrix_profile.last_values[
             -matrix_profile.window :
         ]
@@ -164,7 +111,7 @@ def normal_mode_processing(
 ) -> AnomalyDetectionUncommited:
     """The regular/normal mode for the anomaly detection process."""
 
-    update_matrix_profile(matrix_profile, tsd)
+    _update_matrix_profile(matrix_profile, tsd)
 
     # The processing is skipped if not enough items in the matrix profile
     if matrix_profile.initial_values_full_capacity is False:
@@ -217,12 +164,16 @@ def _get_or_create_last_interactive_feedback_mode_turned_on(
         return False
 
 
-def _save_interactive_feedback_resutls(matrix_profile: MatrixProfile):
+def _save_interactive_feedback_resutls(
+    matrix_profile: MatrixProfile, sensor: Sensor
+):
     """After user toggle off the interactive feedback
     all results have to be saved.
     """
 
-    matrix_profile.baseline = copy_initial_baseline(matrix_profile.mp_level)
+    # TODO: Get the initial baseline from the sensor instead
+    # ====================================================================
+    matrix_profile.baseline = get_initial_baseline_by_sensor(sensor)
 
     if matrix_profile.fb_temp and (
         max(matrix_profile.fb_temp)
@@ -270,7 +221,7 @@ def _process_mode_dispatcher(
             key=tsd.sensor.id,
             item=False,
         )
-        _save_interactive_feedback_resutls(matrix_profile)
+        _save_interactive_feedback_resutls(matrix_profile, tsd.sensor)
         return normal_mode_processing(matrix_profile, tsd)
     # NOTE: Toggle ON the interactive feedback
     elif (
@@ -313,7 +264,8 @@ def process(tsd: Tsd) -> AnomalyDetectionUncommited:
         logger.success(
             f"A new matrix profile is created for the sensor {tsd.sensor.id}"
         )
-        baseline = copy_initial_baseline(level=MatrixProfileLevel.HIGH)
+        baseline: aampi = get_initial_baseline_by_sensor(tsd.sensor)
+
         matrix_profile = MatrixProfile(
             max_dis=np.float64(max(baseline.P_)),
             baseline=baseline,

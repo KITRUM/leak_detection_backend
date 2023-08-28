@@ -21,7 +21,8 @@ __all__ = (
 # ********** Sensor Configuration **********
 # ************************************************
 class SensorConfigurationUncommited(InternalModel):
-    interactive_feedback_mode: bool = False
+    interactive_feedback_mode: bool
+    initial_anomaly_detection_baseline: bytes
 
 
 class SensorConfigurationUpdatePartialSchema(InternalModel):
@@ -31,6 +32,7 @@ class SensorConfigurationUpdatePartialSchema(InternalModel):
     """
 
     interactive_feedback_mode: bool | None = None
+    initial_anomaly_detection_baseline: bytes | None = None
 
 
 class SensorConfigurationFlat(SensorConfigurationUncommited):
