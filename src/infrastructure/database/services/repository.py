@@ -129,7 +129,16 @@ class BaseRepository(Session, Generic[ConcreteTable]):  # type: ignore
             yield schema
 
     async def delete(self, id_: int) -> None:
+        """Delete the database row by instance id."""
+
         await self.execute(
             delete(self.schema_class).where(self.schema_class.id == id_)
         )
         await self._session.flush()
+
+    async def delete_all(self) -> None:
+        """Delete all rows from the database.
+        ⚠️ Used only for dev purposes.
+        """
+
+        await self.execute(delete(self.schema_class))
