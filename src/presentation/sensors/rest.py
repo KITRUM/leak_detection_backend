@@ -2,17 +2,15 @@ from typing import AsyncGenerator
 
 from fastapi import APIRouter, Request
 
-from src.application import tsd
+from src.application import sensors, tsd
 from src.domain.sensors import (
     Sensor,
     SensorBase,
-    SensorConfigurationUncommited,
     SensorConfigurationUpdatePartialSchema,
-    SensorCreateSchema,
     SensorsRepository,
     SensorUpdatePartialSchema,
+    services,
 )
-from src.domain.sensors import services as sensors_services
 from src.infrastructure.application import tasks
 from src.infrastructure.contracts import Response, ResponseMulti
 from src.infrastructure.database import transaction
@@ -32,19 +30,14 @@ router = APIRouter(prefix="", tags=["Sensors"])
 # ********** CRUD block **********
 # ************************************************
 @router.post("/templates/{template_id}/sensors", status_code=201)
-@transaction
 async def sensor_create(
     _: Request, template_id: int, schema: SensorCreateRequestBody
 ) -> Response[SensorPublic]:
     """Return the list of platforms that are provided."""
 
-    # Save sesor and configuration to the database
-    create_schema = SensorCreateSchema(
-        configuration_uncommited=SensorConfigurationUncommited(),
-        template_id=template_id,
-        sensor_payload=SensorBase.from_orm(schema),
+    sensor: Sensor = await sensors.create(
+        template_id=template_id, sensor_payload=SensorBase.from_orm(schema)
     )
-    sensor: Sensor = await sensors_services.create(create_schema)
 
     # Run the processing task in a background on sensor creation
     await tasks.run(
@@ -88,7 +81,7 @@ async def sensor_update(
 ) -> Response[SensorPublic]:
     """Partially update the sensor."""
 
-    sensor: Sensor = await sensors_services.update(
+    sensor: Sensor = await services.update(
         sensor_id=sensor_id,
         sensor_update_schema=SensorUpdatePartialSchema.from_orm(schema),
         configuration_update_schema=SensorConfigurationUpdatePartialSchema.from_orm(
@@ -107,9 +100,9 @@ async def sensor_delete(_: Request, sensor_id: int) -> None:
     """
 
     # Remove the sensor and the configuration
-    await sensors_services.delete(sensor_id)
+    await services.delete(sensor_id)
 
     # Cancel the task if a user removes the sensor
     tasks.cancel(namespace="sensor_tsd_process", key=sensor_id)
 
-    await sensors_services.delete(sensor_id)
+    await services.delete(sensor_id)

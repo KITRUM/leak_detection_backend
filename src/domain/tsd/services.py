@@ -1,10 +1,9 @@
 import numpy as np
-from sqlalchemy import delete
 
 from src.config import settings
 from src.domain.tsd.models import Tsd, TsdFlat, TsdRaw, TsdUncommited
 from src.domain.tsd.repository import TsdRepository
-from src.infrastructure.database import TimeSeriesDataTable, transaction
+from src.infrastructure.database import transaction
 
 
 @transaction
@@ -18,13 +17,6 @@ async def save_tsd(tsd_raw: TsdRaw, sensor_id: int) -> Tsd:
         )
     )
     return await repository.get(tsd.id)
-
-
-@transaction
-async def delete_all():
-    """This function is used by the startup hook if debug mode is on."""
-
-    await TsdRepository().execute(delete(TimeSeriesDataTable))
 
 
 @transaction

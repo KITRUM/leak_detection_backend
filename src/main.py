@@ -4,7 +4,7 @@ from typing import Callable
 from fastapi import FastAPI
 from loguru import logger
 
-from src import application, domain, presentation
+from src import application, debug, presentation
 from src.config import settings
 from src.infrastructure.application import create as application_factory
 from src.infrastructure.application import middlewares, tasks
@@ -32,17 +32,10 @@ logger.add(
 # NOTE: tasks are running in a sequence
 startup_tasks: list[Callable] = []
 
+# Extend with dev tasks
 if settings.debug is True:
-    startup_tasks.extend(
-        [
-            domain.anomaly_detection.services.delete_all,
-            domain.tsd.services.delete_all,
-            domain.simulation.services.delete_all,
-            domain.estimation.services.delete_all,
-            domain.events.sensors.services.delete_all,
-            domain.events.templates.services.delete_all,
-        ]
-    )
+    startup_tasks.extend([debug.reset_the_database])
+
 startup_tasks.extend(
     [
         application.tsd.create_tasks_for_existed_sensors_process,

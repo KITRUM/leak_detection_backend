@@ -1,17 +1,7 @@
-from sqlalchemy import delete
-
-from src.infrastructure.database import SensorsEventsTable
 from src.infrastructure.database.services.transaction import transaction
 
 from .models import Event, EventFlat, EventUncommited
 from .repository import SensorsEventsRepository
-
-
-@transaction
-async def delete_all():
-    """This function is used by the startup hook if debug mode is on."""
-
-    await SensorsEventsRepository().execute(delete(SensorsEventsTable))
 
 
 @transaction

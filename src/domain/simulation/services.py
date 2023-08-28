@@ -2,12 +2,7 @@ from csv import DictReader
 from functools import lru_cache
 from pathlib import Path
 
-from sqlalchemy import delete
-
-from src.infrastructure.database import (
-    SimulationDetectionRatesTable,
-    transaction,
-)
+from src.infrastructure.database import transaction
 
 from .models import (
     Leakage,
@@ -15,15 +10,6 @@ from .models import (
     SimulationDetectionRateUncommited,
 )
 from .repository import SimulationDetectionRatesRepository
-
-
-@transaction
-async def delete_all():
-    """This function is used by the startup hook if debug mode is on."""
-
-    await SimulationDetectionRatesRepository().execute(
-        delete(SimulationDetectionRatesTable)
-    )
 
 
 @transaction
