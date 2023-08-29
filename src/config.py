@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 
 import numpy as np
@@ -59,6 +60,12 @@ class AnomalyDetectionSettings(BaseModel):
     # ref: domain/anomaly_detection/services.py:
     #       _save_interactive_feedback_resutls()
     interactive_feedback_save_max_limit: int = 1000
+
+    # This config determines how often the baseline selection is happening.
+    # The limit is a timedelta which defines the range between the first
+    # time series data item which was not used for the selection
+    # and the latest one in the database
+    baseline_selection_limit: timedelta = timedelta(days=15)
 
 
 class SimulationParameters(InternalModel):

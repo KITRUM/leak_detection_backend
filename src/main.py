@@ -6,8 +6,12 @@ from loguru import logger
 
 from src import application, debug, presentation
 from src.config import settings
-from src.infrastructure.application import create as application_factory
-from src.infrastructure.application import middlewares, tasks
+from src.infrastructure.application import (
+    factory,
+    middlewares,
+    processes,
+    tasks,
+)
 
 # Adjust the logging
 # -------------------------------
@@ -66,10 +70,9 @@ startup_tasks.extend(
     ]
 )
 
-
 # Adjust the application
 # -------------------------------
-app: FastAPI = application_factory(
+app: FastAPI = factory.create(
     debug=settings.debug,
     middlewares=[
         middlewares.cors,
@@ -84,5 +87,12 @@ app: FastAPI = application_factory(
         presentation.events.templates.router,
     ),
     startup_tasks=startup_tasks,
-    shutdown_tasks=(),
+    startup_processes=(
+        partial(
+            processes.run,
+            namespace="baseline_selection",
+            key="processing",
+            callback=application.baselines.selection.process,
+        ),
+    ),
 )

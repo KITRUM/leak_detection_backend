@@ -1,5 +1,3 @@
-import asyncio
-from functools import partial
 from typing import Callable, Coroutine, Iterable
 
 from fastapi import APIRouter, FastAPI
@@ -23,11 +21,13 @@ def create(
     routers: Iterable[APIRouter],
     middlewares: Iterable[middlewares.Middleware],
     startup_tasks: Iterable[Callable[[], Coroutine]],
-    shutdown_tasks: Iterable[Callable[[], Coroutine]],
+    startup_processes: Iterable[Callable],
     **kwargs,
 ) -> FastAPI:
-    """The FastAPI application factory.
-    🎉 Only passing routes is mandatory to start.
+    """The application factory.
+    1. It runs the FastAPI application
+    2. It runs startup async IO-bound separate tasks
+    3. It runs startup CPU-bound separate processes
     """
 
     # Initialize the base FastAPI application
@@ -52,12 +52,12 @@ def create(
     # Define startup tasks
     # -----------------------------------------------
     for task in startup_tasks:
-        app.on_event("startup")(partial(asyncio.create_task, task()))
+        app.on_event("startup")(task)
 
-    # Define shutdown tasks
+    # Define startup processes
     # -----------------------------------------------
-    for task in shutdown_tasks:
-        app.on_event("shutdown")(partial(asyncio.create_task, task()))
+    for process in startup_processes:
+        app.on_event("startup")(process)
 
     # Define middlewares
     # -----------------------------------------------
