@@ -3,8 +3,6 @@ from enum import StrEnum
 __all__ = ("ANOMALY_DETECTION_MATRIX_PROFILE_ERROR_MESSAGE",)
 
 
-# Load initial baselines
-# --------------------------------------------------------------
 class CacheNamespace(StrEnum):
     interactive_mode_turned_on = "interactive_mode_turned_on"
 

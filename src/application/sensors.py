@@ -22,7 +22,7 @@ async def create(template_id: int, sensor_payload: SensorBase) -> Sensor:
     """
 
     anomaly_detection_initial_baseline: aampi = (
-        anomaly_detection_services.get_initial_baseline_from_seed(level="high")
+        anomaly_detection_services.baselines.get_from_seed(level="high")
     )
 
     initial_baseline_flat: bytes = pickle.dumps(
