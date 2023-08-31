@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import Field
 
 from src.infrastructure.models import PublicModel
@@ -28,6 +30,8 @@ class SensorConfigurationUpdateRequestBody(PublicModel):
             "then, the anomaly detection processing will be ran in normal mode"
         ),
     )
+    last_baseline_selection_timestamp: datetime | None = None
+    last_baseline_update_timestamp: datetime | None = None
 
 
 class SensorUpdateRequestBody(PublicModel):

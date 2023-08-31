@@ -14,6 +14,7 @@ There you'll find the Git flow, database strcture, glossary and a lot more infor
 ## 🚧 Mandatory steps
 
 Clone the project from GitHub
+
 ```bash
 git clone git@github.com:KitRUM/leak_detection_backend.git
 ```
@@ -52,21 +53,24 @@ alembic upgrade head
 **More alembic commands**
 
 Generate a new migration file based on SQLAlchemy models
+
 ```bash
 alembic revision --autogenerate -m "MESSAGE"
 ```
 
 Upgrade database according to the last version of migrations
+
 ```bash
 alembic upgrade head
 ```
 
 Downgrade to the specific migration version
+
 ```bash
 alembic downgrade 0e43c346b90d
 ```
 
-*P.S. This hash is taken from the generated file in the migrations folder*
+_P.S. This hash is taken from the generated file in the migrations folder_
 
 > ⚠️ Do not forget that alembic saves the migration version into the database. Then, when you do crusial database updates you might need to remove the revision ID from the database.</i>
 
@@ -74,8 +78,6 @@ alembic downgrade 0e43c346b90d
 sqlite3 leak_detection.sqlite3
 > delete from alembic_version;
 ```
-
-
 
 ### 🏃‍♂️ Run the application
 
@@ -95,10 +97,11 @@ Since developers may use different operating system the Docker system is used in
 If more specifically, the Docker compose is used for better experience.
 
 ### 🛠️ Setting up the project
+
 For setting up the project you just need to complete only a few steps:
 
-* Install Docker [[_download page_](https://docs.docker.com/get-docker/)]
-* Run Docker containers using docker-compose:
+- Install Docker [[_download page_](https://docs.docker.com/get-docker/)]
+- Run Docker containers using docker-compose:
 
 ### 🏃‍♂️ Running docker containers
 
@@ -125,16 +128,16 @@ docker-compose logs -f
 
 <br>
 
-
 ## 🔧 Configure the project
 
 The project could be configurable by using the environment variables.
 
-For better development experience - the pydantic Config feature is used (*described in the config.py file*). It means that you can configure any variable that is encapsulated in the `src/config.py:setting` object by setting the environment variable in the session where you run the application.
+For better development experience - the pydantic Config feature is used (_described in the config.py file_). It means that you can configure any variable that is encapsulated in the `src/config.py:setting` object by setting the environment variable in the session where you run the application.
 
 Read more about [Pydantic Settings](https://docs.pydantic.dev/latest/usage/pydantic_settings/)
 
 The example:
+
 ```
 # on Unix
 export DATABASE__NAME=leak_detection.sqlite3
@@ -148,6 +151,7 @@ $env:DATABASE__NAME = "leak_detection.sqlite3";
 Or as a preffered alternative you may use the `.env` that is automatically complete the stuff above for you if you use `pipenv` tool.
 
 It means you jsut need to complete next steps:
+
 ```bash
 # create the .env file base on the .env.default file
 cp .env.default .env
@@ -156,19 +160,16 @@ cp .env.default .env
 pipenv shell
 ```
 
-
 <br>
-
 
 ## 🤔 Summary
 
-* So now, the project is ready to be used as a backend API.
-Just use your favorite Http requests client (_such as Postman or Advanced Rest Client_) for making queries.
+- So now, the project is ready to be used as a backend API.
+  Just use your favorite Http requests client (_such as Postman or Advanced Rest Client_) for making queries.
 
-* The `http://localhost:8000/docs` is available in your browser for reaching the API documentation (_Swagger_)
+- The `http://localhost:8000/docs` is available in your browser for reaching the API documentation (_Swagger_)
 
-* `leak_detection_backend/http/` folder contains http requests examples
-
+- `leak_detection_backend/http/` folder contains http requests examples
 
 <br>
 
@@ -189,6 +190,10 @@ For more details read about [DDD](https://en.wikipedia.org/wiki/Domain-driven_de
     ├─ Makefile                 # Contains Bash scripts for comfortable work from the terminal
     ├─ logs                     # Local folder that aggregates all application logs
     ├─ seed                     # Contains seed files that are mandatory for running the application
+        └─ baselines            # Contains seed baselines for anomaly detection processing
+            └─ selection        # Includes initial baselines for the BASELINE SELECTION feature
+                ├─ *.mpstream   # Baseline file
+                └─ mps.json     # The baselines management file. Includes stats
     ├─ http                     # Contains Api endpoints requests examples
     ├─ mock                     # The mock data for running the application in `Debug` mode
     └─ src                      # The sources root

@@ -122,6 +122,7 @@ follow_imports = 'silent'
 module = [
     "websockets.exceptions",
     "stumpy.*",
+    "scipy.*",
 ]
 ignore_missing_imports = true
 

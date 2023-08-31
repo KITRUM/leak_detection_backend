@@ -4,6 +4,9 @@ the project's data lake.
 
 It is not placed in the infrastructure layer,
 since it depends on internal data models.
+
+⚠️ Probably this module should be placed between application and domain layers.
+
 """
 
 import asyncio

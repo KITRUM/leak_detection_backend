@@ -1,6 +1,8 @@
 from enum import Enum, StrEnum, auto
+from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 from pydantic import BaseModel, Field
 from stumpy.aampi import aampi
 
@@ -15,6 +17,7 @@ __all__ = (
     "AnomalyDetectionUncommited",
     "AnomalyDetectionFlat",
     "AnomalyDetection",
+    "SeedBaseline",
 )
 
 
@@ -63,7 +66,10 @@ class AnomalyDetection(AnomalyDetectionBase, InternalModel):
 
 
 class MatrixProfile(InternalModel):
-    """The Matrix profile intermediate data structure."""
+    """The Matrix profile intermediate data structure.
+
+    ⚠️ This data model should be simplified!
+    """
 
     max_dis: np.float64
     counter: int = 0
@@ -85,3 +91,11 @@ class MatrixProfile(InternalModel):
 
     # Defines if first `window size` number of values were consumed
     initial_values_full_capacity: bool = False
+
+
+class SeedBaseline(InternalModel):
+    """The seed baseline which is used for the baseline selection feature."""
+
+    filename: Path
+    stats: NDArray[np.float64]
+    baseline: aampi

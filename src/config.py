@@ -50,22 +50,49 @@ class LoggingSettings(BaseModel):
     compression: str = "zip"
 
 
+class SensorsAnomalyDetectionSettings(BaseModel):
+    """This model aggregates anomaly detection
+    settings for all sensors.
+    """
+
+    # This config determines how often the best baseline selection
+    # is happening. The interval is a range between the last time series
+    # data consumed and the first one which has to be taken for the process
+    baseline_best_selection_interval: timedelta = timedelta(days=15)
+
+    # This config determines how often the sensor's initial baseline
+    # update is happening. The interval defines how often this process runs.
+    baseline_update_interval: timedelta = timedelta(days=30)
+
+
+class SensorsSettings(BaseModel):
+    anomaly_detection = (
+        SensorsAnomalyDetectionSettings
+    ) = SensorsAnomalyDetectionSettings()
+
+
 class AnomalyDetectionSettings(BaseModel):
+    # Defines the extension of the file with the matrix profile data.
+    mpstream_file_extension: str = ".mpstream"
+
+    # Determines how many points are skipped before searching the next discord.
+    # 🔗 https://stumpy.readthedocs.io/en/latest/Tutorial_STUMPY_Basics.html
+    # Find-Potential-Anomalies-(Discords)-using-STUMP
+    exclusion_zone: int = 72
+
+    # The discrete of the data frame which determines how many points
+    # are used for the anomaly detection prediction
     window_size: int = 144
-    warning: int = 200
-    alert: int = 500
+
+    # The discrete value which is used as a `limit` for detecting the anomaly
+    warning: int = 100
+    alert: int = 200
 
     # This config determines if we should save the interactive feedback
     # results after toggling this feature off.
     # ref: domain/anomaly_detection/services.py:
     #       _save_interactive_feedback_resutls()
     interactive_feedback_save_max_limit: int = 1000
-
-    # This config determines how often the baseline selection is happening.
-    # The limit is a timedelta which defines the range between the first
-    # time series data item which was not used for the selection
-    # and the latest one in the database
-    baseline_selection_limit: timedelta = timedelta(days=15)
 
 
 class SimulationParameters(InternalModel):
@@ -119,6 +146,7 @@ class Settings(BaseSettings):
     public_api: PublicApiSettings = PublicApiSettings()
     logging: LoggingSettings = LoggingSettings()
 
+    sensors: SensorsSettings = SensorsSettings()
     anomaly_detection: AnomalyDetectionSettings = AnomalyDetectionSettings()
     simulation: SimulationSettings = SimulationSettings()
 

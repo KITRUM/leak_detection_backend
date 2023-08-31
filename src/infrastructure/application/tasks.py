@@ -4,7 +4,7 @@ implementing tasks interaction interface.
 """
 
 from asyncio import Task, create_task
-from typing import Any, Coroutine
+from typing import Any, Callable, Coroutine
 
 from loguru import logger
 
@@ -42,13 +42,13 @@ def cancel(namespace: str, key: Any) -> None:
 # NOTE: It could be refactored to use separate threads instead of coroutines.
 #       Create a thread and store the thread by the id/name in the storage.
 #       On delete we can stop the thread on demand.
-async def run(namespace: str, key: Any, coro: Coroutine):
+async def run(namespace: str, key: Any, coro: Callable[[], Coroutine]):
     """Run the task and register it for future management."""
 
     if (_key := _build_key(namespace, key)) in _TASKS.keys():
         raise TaskErorr(message=f"Task {_key} already exist")
 
-    task: Task = create_task(coro, name=_key)
+    task: Task = create_task(coro(), name=_key)
     _TASKS[_key] = task
 
     logger.debug(

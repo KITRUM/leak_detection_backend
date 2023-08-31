@@ -1,3 +1,4 @@
+from functools import partial
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, Request
@@ -41,7 +42,9 @@ async def sensor_create(
 
     # Run the processing task in a background on sensor creation
     await tasks.run(
-        namespace="sensor_tsd_process", key=sensor.id, coro=tsd.process(sensor)
+        namespace="sensor_tsd_process",
+        key=sensor.id,
+        coro=partial(tsd.process, sensor),
     )
 
     return Response[SensorPublic](result=SensorPublic.from_orm(sensor))
@@ -81,7 +84,7 @@ async def sensor_update(
 ) -> Response[SensorPublic]:
     """Partially update the sensor."""
 
-    sensor: Sensor = await services.update(
+    sensor: Sensor = await services.crud.update(
         sensor_id=sensor_id,
         sensor_update_schema=SensorUpdatePartialSchema.from_orm(schema),
         configuration_update_schema=SensorConfigurationUpdatePartialSchema.from_orm(
@@ -100,9 +103,9 @@ async def sensor_delete(_: Request, sensor_id: int) -> None:
     """
 
     # Remove the sensor and the configuration
-    await services.delete(sensor_id)
+    await services.crud.delete(sensor_id)
 
     # Cancel the task if a user removes the sensor
     tasks.cancel(namespace="sensor_tsd_process", key=sensor_id)
 
-    await services.delete(sensor_id)
+    await services.crud.delete(sensor_id)

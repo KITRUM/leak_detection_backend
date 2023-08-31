@@ -1,5 +1,9 @@
+import pickle
+from datetime import datetime
+
 import numpy as np
 from pydantic import validator
+from stumpy import aampi
 
 from src.domain.templates.models import Template
 from src.infrastructure.models import InternalModel
@@ -22,7 +26,17 @@ __all__ = (
 # ************************************************
 class SensorConfigurationUncommited(InternalModel):
     interactive_feedback_mode: bool
-    initial_anomaly_detection_baseline: bytes
+    anomaly_detection_initial_baseline_raw: bytes
+    last_baseline_selection_timestamp: datetime | None = None
+    last_baseline_update_timestamp: datetime | None = None
+
+    @property
+    def anomaly_detection_initial_baseline(self) -> aampi:
+        """Converts the database representation of the initial baseline
+        which is in bytes into the specific stumpy object.
+        """
+
+        return pickle.loads(self.anomaly_detection_initial_baseline_raw)
 
 
 class SensorConfigurationUpdatePartialSchema(InternalModel):
@@ -32,7 +46,9 @@ class SensorConfigurationUpdatePartialSchema(InternalModel):
     """
 
     interactive_feedback_mode: bool | None = None
-    initial_anomaly_detection_baseline: bytes | None = None
+    anomaly_detection_initial_baseline_raw: bytes | None = None
+    last_baseline_selection_timestamp: datetime | None = None
+    last_baseline_update_timestamp: datetime | None = None
 
 
 class SensorConfigurationFlat(SensorConfigurationUncommited):

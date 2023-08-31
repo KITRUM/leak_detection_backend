@@ -1,9 +1,12 @@
+from datetime import datetime
+
 import numpy as np
 
 from src.config import settings
-from src.domain.tsd.models import Tsd, TsdFlat, TsdRaw, TsdUncommited
-from src.domain.tsd.repository import TsdRepository
 from src.infrastructure.database import transaction
+
+from .models import Tsd, TsdFlat, TsdRaw, TsdUncommited
+from .repository import TsdRepository
 
 
 @transaction
@@ -32,12 +35,33 @@ async def get_historical_data(sensor_id: int) -> list[TsdFlat]:
 
 
 @transaction
-async def get_last_tsd_set(sensor_id: int, id_: int) -> list[TsdFlat]:
+async def get_last_window_size_set(
+    sensor_id: int, last_id: int
+) -> list[TsdFlat]:
+    """Returns last `window size` number of TSD instances."""
+
     return [
         tsd
-        async for tsd in TsdRepository().fitler_last_by_sensor(
+        async for tsd in TsdRepository().by_sensor(
             sensor_id=sensor_id,
-            id_=id_,
+            last_id=last_id,
             limit=settings.anomaly_detection.window_size,
+        )
+    ]
+
+
+@transaction
+async def get_last_set_from_timestamp(
+    sensor_id: int, timestamp: datetime | None = None
+) -> list[TsdFlat]:
+    if not timestamp:
+        return [
+            instance async for instance in TsdRepository().by_sensor(sensor_id)
+        ]
+
+    return [
+        instance
+        async for instance in TsdRepository().by_sensor(
+            sensor_id=sensor_id, timestamp_from=timestamp
         )
     ]

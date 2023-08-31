@@ -5,7 +5,6 @@ from ...models import (
     AnomalyDeviation,
     MatrixProfile,
 )
-from .. import baselines
 
 
 def _update_matrix_profile(matrix_profile: MatrixProfile, tsd: Tsd) -> None:
@@ -17,7 +16,9 @@ def _update_matrix_profile(matrix_profile: MatrixProfile, tsd: Tsd) -> None:
         # Reset the matrix profile baseline and last values
         matrix_profile.counter = matrix_profile.window
 
-        matrix_profile.baseline = baselines.get_initial_by_sensor(tsd.sensor)
+        matrix_profile.baseline = (
+            tsd.sensor.configuration.anomaly_detection_initial_baseline
+        )
         matrix_profile.last_values = matrix_profile.last_values[
             -matrix_profile.window :
         ]
@@ -36,7 +37,7 @@ def process(
 
     _update_matrix_profile(matrix_profile, tsd)
 
-    # The processing is skipped if not enough items in the matrix profile
+    # The processinr is skipped if not enough items in the matrix profile
     if matrix_profile.initial_values_full_capacity is False:
         return AnomalyDetectionUncommited(
             value=AnomalyDeviation.UNDEFINED,
