@@ -14,6 +14,7 @@ from src.domain.events.sensors.models import (
     ANOMALY_DEVIATION_TO_EVENT_TYPE_MAPPING,
 )
 
+# TODO: Change the var-storage to the cache
 LAST_SENSORS_EVENTS_TYPES: dict[int, Deque[EventType]] = defaultdict(
     partial(deque, maxlen=3)  # type: ignore[arg-type]
 )

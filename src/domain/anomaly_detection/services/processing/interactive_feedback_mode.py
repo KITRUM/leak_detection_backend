@@ -10,7 +10,6 @@ from ...models import (
     AnomalyDeviation,
     MatrixProfile,
 )
-from .. import baselines
 
 
 def process(
@@ -25,8 +24,8 @@ def process(
     if matrix_profile.counter >= (matrix_profile.window * 2):
         # Reset the matrix profile baseline and last values
         matrix_profile.counter = matrix_profile.window
-        matrix_profile.fb_baseline = baselines.get_initial_by_sensor(
-            tsd.sensor
+        matrix_profile.fb_baseline = (
+            tsd.sensor.configuration.anomaly_detection_initial_baseline
         )
         matrix_profile.last_values = matrix_profile.last_values[
             -matrix_profile.window :
@@ -88,7 +87,9 @@ def save_results(matrix_profile: MatrixProfile, sensor: Sensor):
     all results have to be saved.
     """
 
-    matrix_profile.baseline = baselines.get_initial_by_sensor(sensor)
+    matrix_profile.baseline = (
+        sensor.configuration.anomaly_detection_initial_baseline
+    )
 
     if matrix_profile.fb_temp and (
         max(matrix_profile.fb_temp)

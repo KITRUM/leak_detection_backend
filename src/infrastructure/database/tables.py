@@ -54,36 +54,42 @@ ConcreteTable = TypeVar("ConcreteTable", bound=Base)  # type: ignore
 class TemplatesTable(Base):
     __tablename__ = "templates"
 
-    currents_path: str = Column(String, nullable=False)  # type: ignore
-    waves_path: str = Column(String, nullable=False)  # type: ignore
-    simulated_leaks_path: str = Column(String, nullable=False)  # type: ignore
+    currents_path: str = Column(
+        String, nullable=False
+    )  # type: ignore[var-annotated]
+    waves_path: str = Column(
+        String, nullable=False
+    )  # type: ignore[var-annotated]
+    simulated_leaks_path: str = Column(
+        String, nullable=False
+    )  # type: ignore[var-annotated]
 
-    name: str = Column(String, nullable=False)  # type: ignore
-    angle_from_north: float = Column(Float, nullable=False)  # type: ignore
-    height: float = Column(Float, nullable=True, default=None)  # type: ignore
-    z_roof: float = Column(Float, nullable=True, default=None)  # type: ignore
+    name: str = Column(String, nullable=False)  # type: ignore[var-annotated]
+    angle_from_north: float = Column(
+        Float, nullable=False
+    )  # type: ignore[var-annotated]
+    height: float = Column(
+        Float, nullable=True, default=None
+    )  # type: ignore[var-annotated]
+    z_roof: float = Column(
+        Float, nullable=True, default=None
+    )  # type: ignore[var-annotated]
 
     # Semi-closed parameters
-    porosity: dict | None = Column(  # type: ignore
-        JSON,
-        nullable=True,
-        default=None,
-    )
-    wall_area: dict | None = Column(  # type: ignore
-        JSON,
-        nullable=True,
-        default=None,
-    )
-    inclination: dict | None = Column(  # type: ignore
-        JSON,
-        nullable=True,
-        default=None,
-    )
-    internal_volume: float | None = Column(  # type: ignore
+    porosity: dict | None = Column(
+        JSON, nullable=True, default=None
+    )  # type: ignore[var-annotated]
+    wall_area: dict | None = Column(
+        JSON, nullable=True, default=None
+    )  # type: ignore[var-annotated]
+    inclination: dict | None = Column(
+        JSON, nullable=True, default=None
+    )  # type: ignore[var-annotated]
+    internal_volume: float | None = Column(
         Float,
         nullable=True,
         default=None,
-    )
+    )  # type: ignore[var-annotated]
 
     # below parameters only required if internal_volume is not defined
     length: float = Column(Float, nullable=True, default=None)  # type: ignore
@@ -102,9 +108,19 @@ class SensorsConfigurationsTable(Base):
         Boolean, nullable=False, default=False
     )  # type: ignore[var-annotated]
 
-    initial_anomaly_detection_baseline: bytes = Column(
+    anomaly_detection_initial_baseline_raw: bytes = Column(
         BLOB,
         nullable=False,
+    )  # type: ignore[var-annotated]
+
+    # ℹ️ The last TSD instance that was using for the baseline selection
+    last_baseline_selection_timestamp: datetime | None = Column(
+        DateTime, nullable=True, default=None
+    )  # type: ignore[var-annotated]
+
+    # ℹ️ The last TSD instance that was using for the baseline update
+    last_baseline_update_timestamp: datetime | None = Column(
+        DateTime, nullable=True, default=None
     )  # type: ignore[var-annotated]
 
     sensor = relationship(
@@ -115,10 +131,12 @@ class SensorsConfigurationsTable(Base):
 class SensorsTable(Base):
     __tablename__ = "sensors"
 
-    name: str = Column(String, nullable=False, unique=True)  # type: ignore
-    x: float = Column(Float, nullable=False)  # type: ignore
-    y: float = Column(Float, nullable=False)  # type: ignore
-    z: float = Column(Float, nullable=False)  # type: ignore
+    name: str = Column(
+        String, nullable=False, unique=True
+    )  # type: ignore[var-annotated]
+    x: float = Column(Float, nullable=False)  # type: ignore[var-annotated]
+    y: float = Column(Float, nullable=False)  # type: ignore[var-annotated]
+    z: float = Column(Float, nullable=False)  # type: ignore[var-annotated]
 
     configuration_id: int = Column(
         ForeignKey(SensorsConfigurationsTable.id),
@@ -199,9 +217,11 @@ class AnomalyDetectionsTable(Base):
 class SimulationDetectionRatesTable(Base):
     __tablename__ = "simulation_detection_rates"
 
-    leakage: dict = Column(JSON, nullable=False)  # type: ignore
-    concentrations: str = Column(String, nullable=False)  # type: ignore
-    rate: float = Column(Float, nullable=False)  # type: ignore
+    leakage: dict = Column(JSON, nullable=False)  # type: ignore[var-annotated]
+    concentrations: str = Column(
+        String, nullable=False
+    )  # type: ignore[var-annotated]
+    rate: float = Column(Float, nullable=False)  # type: ignore[var-annotated]
 
     anomaly_detection_id: int = Column(
         ForeignKey(AnomalyDetectionsTable.id),
@@ -218,8 +238,10 @@ class SimulationDetectionRatesTable(Base):
 class EstimationsSummariesTable(Base):
     __tablename__ = "estimations_summaries"
 
-    result: str = Column(String, nullable=False)  # type: ignore
-    confidence: float = Column(Float, nullable=False)  # type: ignore
+    result: str = Column(String, nullable=False)  # type: ignore[var-annotated]
+    confidence: float = Column(
+        Float, nullable=False
+    )  # type: ignore[var-annotated]
     simulation_detection_rate_ids: str = Column(
         String, nullable=False
     )  # type: ignore[var-annotated]
@@ -236,7 +258,7 @@ class EstimationsSummariesTable(Base):
 class TemplatesEventsTable(Base):
     __tablename__ = "templates_events"
 
-    type: str = Column(String, nullable=False)  # type: ignore
+    type: str = Column(String, nullable=False)  # type: ignore[var-annotated]
 
     template_id: int = Column(
         ForeignKey(TemplatesTable.id),
@@ -251,7 +273,7 @@ class TemplatesEventsTable(Base):
 class SensorsEventsTable(Base):
     __tablename__ = "sensors_events"
 
-    type: str = Column(String, nullable=False)  # type: ignore
+    type: str = Column(String, nullable=False)  # type: ignore[var-annotated]
 
     sensor_id: int = Column(
         ForeignKey(SensorsTable.id),

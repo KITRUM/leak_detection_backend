@@ -1,0 +1,22 @@
+[
+  {
+    "name": "low",
+    "file": "mp_low.mpstream",
+    "stats": [23.92166052509913, 115.11018472633732]
+  },
+  {
+    "name": "mid",
+    "file": "mp_mid.mpstream",
+    "stats": [33.70430007737835, 742.793525496084]
+  },
+  {
+    "name": "high",
+    "file": "mp_high.mpstream",
+    "stats": [37.95233682018488, 1808.526258299781]
+  },
+  {
+    "name": "trestakk1ta",
+    "file": "mp_trestakk1ta.mpstream",
+    "stats": [26.716740813215797, 261.18723326385407]
+  }
+]

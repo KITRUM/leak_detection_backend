@@ -28,7 +28,9 @@ async def anomaly_detections_for_simulation(ws: WebSocket, sensor_id: int):
         historical_data: list[AnomalyDetectionPublic] = [
             AnomalyDetectionPublic.from_orm(instance)
             for instance in (
-                await anomaly_detection_services.get_historical_data(sensor_id)
+                await anomaly_detection_services.crud.get_historical_data(
+                    sensor_id
+                )
             )
         ]
 

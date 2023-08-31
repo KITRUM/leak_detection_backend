@@ -4,6 +4,8 @@ The general purpose: fetch the data from the external source and parse it
 using the specific platform parser.
 """
 
+from functools import partial
+
 from src.application.data_lake import data_lake
 from src.config import settings
 from src.domain.sensors import Sensor, SensorsRepository
@@ -31,7 +33,7 @@ async def _mock_process_time_series_data(sensor):
 
         tsd_raw: TsdRaw = parser(row)
 
-        # HACK: Some files have pick values that we'd like
+        # NOTE: Some files have pick values that we'd like
         #       to avoide for the demo
         if tsd_raw.ppmv > 10000:
             continue
@@ -67,5 +69,5 @@ async def create_tasks_for_existed_sensors_process():
         await tasks.run(
             namespace="sensor_tsd_process",
             key=sensor.id,
-            coro=process(sensor),
+            coro=partial(process, sensor),
         )

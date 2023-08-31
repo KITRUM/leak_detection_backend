@@ -253,8 +253,8 @@ async def process():
 
         last_time_series_data: list[
             TsdFlat
-        ] = await tsd_services.get_last_tsd_set(
-            sensor_id=time_series_data.sensor.id, id_=time_series_data.id
+        ] = await tsd_services.get_last_window_size_set(
+            sensor_id=time_series_data.sensor.id, last_id=time_series_data.id
         )
 
         if platform is None:

@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable
+from typing import Callable, Coroutine
 
 from fastapi import FastAPI
 from loguru import logger
@@ -30,11 +30,26 @@ logger.add(
     level="INFO",
 )
 
+# Output some settings
+logger.debug(
+    "\n*******************************************************************"
+    "\nSETTINGS"
+    "\n*******************************************************************"
+    "\nThe TSD fetching from the external source periodicity: "
+    f"{settings.tsd_fetch_periodicity}"
+    "\nThe data lake consuming periodicity: "
+    f"{settings.data_lake_consuming_periodicity}"
+    "\nThe sensor's anomaly detection baseline best selection interval: "
+    f"{settings.sensors.anomaly_detection.baseline_best_selection_interval}"
+    "\nThe sensor's anomaly detection baseline udpate interval: "
+    f"{settings.sensors.anomaly_detection.baseline_update_interval}"
+    "\n*******************************************************************"
+)
 
 # Define startup tasks
 # -------------------------------
 # NOTE: tasks are running in a sequence
-startup_tasks: list[Callable] = []
+startup_tasks: list[Callable[[], Coroutine]] = []
 
 # Extend with dev tasks
 if settings.debug is True:
@@ -47,25 +62,25 @@ startup_tasks.extend(
             tasks.run,
             namespace="anomaly_detection",
             key="processing",
-            coro=application.anomaly_detection.process(),
+            coro=application.anomaly_detection.process,
         ),
         partial(
             tasks.run,
             namespace="simulation",
             key="processing",
-            coro=application.simulation.process(),
+            coro=application.simulation.process,
         ),
         partial(
             tasks.run,
             namespace="estimation",
             key="processing",
-            coro=application.estimation.process(),
+            coro=application.estimation.process,
         ),
         partial(
             tasks.run,
             namespace="events",
             key="process",
-            coro=application.events.process(),
+            coro=application.events.process,
         ),
     ]
 )
@@ -90,9 +105,9 @@ app: FastAPI = factory.create(
     startup_processes=(
         partial(
             processes.run,
-            namespace="baseline_selection",
-            key="processing",
-            callback=application.baselines.selection.process,
+            namespace="sensors",
+            key="select_best_baseline",
+            callback=application.sensors.select_best_baseline,
         ),
     ),
 )

@@ -8,8 +8,7 @@ from src.infrastructure.database import (
     SensorsConfigurationsTable,
     SensorsTable,
 )
-from src.infrastructure.errors import NotFoundError
-from src.infrastructure.errors.base import UnprocessableError
+from src.infrastructure.errors import NotFoundError, UnprocessableError
 
 from .models import (
     Sensor,

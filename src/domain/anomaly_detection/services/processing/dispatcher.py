@@ -10,10 +10,9 @@ from src.infrastructure.cache import Cache
 
 from ...constants import CacheNamespace
 from ...models import AnomalyDetectionUncommited, MatrixProfile
-from .. import baselines
 from . import interactive_feedback_mode, normal_mode
 
-__all__ = ("process",)
+__all__ = ("dispatch",)
 
 
 # TODO: Should be moved to the infrastructure later.
@@ -22,6 +21,52 @@ MATRIX_PROFILES: dict[int, MatrixProfile] = {}
 _ProcessingCallback = Callable[
     [MatrixProfile, Tsd], AnomalyDetectionUncommited
 ]
+
+
+def dispatch(tsd: Tsd) -> AnomalyDetectionUncommited:
+    """The main anomaly detection processing entrypoint."""
+
+    # Create default matrix profile if not exist
+    if not (matrix_profile := MATRIX_PROFILES.get(tsd.sensor.id)):
+        logger.success(
+            f"A new matrix profile is created for the sensor {tsd.sensor.id}"
+        )
+        baseline: aampi = (
+            tsd.sensor.configuration.anomaly_detection_initial_baseline
+        )
+
+        matrix_profile = MatrixProfile(
+            max_dis=np.float64(max(baseline.P_)),
+            baseline=baseline,
+            fb_max_dis=np.float64(max(baseline.P_)),
+            fb_baseline=baseline,
+            fb_baseline_start=baseline,
+        )
+        MATRIX_PROFILES[tsd.sensor.id] = matrix_profile
+
+    # For the first `window size` number of items we receive it is needed
+    # skip processing for populating the first matrix profile
+    if (
+        matrix_profile.initial_values_full_capacity is False
+        and matrix_profile.counter >= settings.anomaly_detection.window_size
+    ):
+        matrix_profile.initial_values_full_capacity = True
+
+    last_interactive_feedback_mode_turned_on: bool = (
+        interactive_feedback_mode.get_or_create_from_cache(tsd.sensor.id)
+    )
+    current_interactive_feedback_mode_turned_on: bool = (
+        tsd.sensor.configuration.interactive_feedback_mode
+    )
+
+    callback: _ProcessingCallback = _process_mode_dispatcher(
+        matrix_profile,
+        tsd,
+        last_interactive_feedback_mode_turned_on,
+        current_interactive_feedback_mode_turned_on,
+    )
+
+    return callback(matrix_profile, tsd)
 
 
 def _process_mode_dispatcher(
@@ -92,47 +137,3 @@ def _process_mode_dispatcher(
     else:
         # True, True option
         return interactive_feedback_mode.process
-
-
-def process(tsd: Tsd) -> AnomalyDetectionUncommited:
-    """The main anomaly detection processing entrypoint."""
-
-    # Create default matrix profile if not exist
-    if not (matrix_profile := MATRIX_PROFILES.get(tsd.sensor.id)):
-        logger.success(
-            f"A new matrix profile is created for the sensor {tsd.sensor.id}"
-        )
-        baseline: aampi = baselines.get_initial_by_sensor(tsd.sensor)
-
-        matrix_profile = MatrixProfile(
-            max_dis=np.float64(max(baseline.P_)),
-            baseline=baseline,
-            fb_max_dis=np.float64(max(baseline.P_)),
-            fb_baseline=baseline,
-            fb_baseline_start=baseline,
-        )
-        MATRIX_PROFILES[tsd.sensor.id] = matrix_profile
-
-    # For the first `window size` number of items we receive it is needed
-    # skip processing for populating the first matrix profile
-    if (
-        matrix_profile.initial_values_full_capacity is False
-        and matrix_profile.counter >= settings.anomaly_detection.window_size
-    ):
-        matrix_profile.initial_values_full_capacity = True
-
-    last_interactive_feedback_mode_turned_on: bool = (
-        interactive_feedback_mode.get_or_create_from_cache(tsd.sensor.id)
-    )
-    current_interactive_feedback_mode_turned_on: bool = (
-        tsd.sensor.configuration.interactive_feedback_mode
-    )
-
-    callback: _ProcessingCallback = _process_mode_dispatcher(
-        matrix_profile,
-        tsd,
-        last_interactive_feedback_mode_turned_on,
-        current_interactive_feedback_mode_turned_on,
-    )
-
-    return callback(matrix_profile, tsd)

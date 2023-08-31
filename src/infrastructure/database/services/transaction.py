@@ -13,6 +13,9 @@ from src.infrastructure.errors import DatabaseError
 __all__ = ("transaction",)
 
 
+# TODO: think about making @transaction works with async generators
+
+
 def transaction(coro):
     """This decorator should be used with all coroutines
     that want's access the database for saving a new data.
