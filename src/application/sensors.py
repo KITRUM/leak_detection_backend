@@ -41,6 +41,10 @@ from src.domain.sensors import (
     SensorCreateSchema,
 )
 from src.domain.sensors import services as sensors_services
+from src.domain.sensors.models import Sensor
+from src.domain.tsd import services as tsd_services
+from src.domain.tsd.models import TsdFlat
+from src.infrastructure.errors.base import NotFoundError, UnprocessableError
 
 # NOTE: Once the selected baseline is updated with consumed TSD instances
 #       this list is used as a temporary storage
@@ -120,11 +124,24 @@ async def _select_best_baseline():
     async for sensor in await sensors_services.crud.get_all():
         logger.info(f"Best baseline seelction for {sensor.name}...")
 
+        try:
+            tsd_set: list[TsdFlat] = await tsd_services.get_last_set_from(
+                sensor_id=sensor.id,
+                timestamp=sensor.configuration.last_baseline_selection_timestamp,
+            )
+        except NotFoundError:
+            raise UnprocessableError(
+                message=(
+                    "The initial baseline revision is possible only in case "
+                    "time series data exists in the database. "
+                    f"Sensor: {sensor.name}"
+                )
+            )
+
         cleaned_concentrations: NDArray[
             np.float64
         ] = await anomaly_detection_services.baselines.clean_concentrations(
-            sensor=sensor,
-            last_baseline_selection_timestamp=None,
+            concentrations=np.array([tsd.ppmv for tsd in tsd_set])
         )
 
         if best_baseline := (
@@ -140,9 +157,79 @@ async def _select_best_baseline():
             )
             await sensors_services.crud.update(
                 sensor_id=sensor.id,
-                configuration_update_schema=SensorConfigurationUpdatePartialSchema(  # noqa: E501
-                    anomaly_detection_initial_baseline_raw=pickle.dumps(
-                        best_baseline
+                configuration_update_schema=(
+                    SensorConfigurationUpdatePartialSchema(
+                        anomaly_detection_initial_baseline_raw=pickle.dumps(
+                            best_baseline
+                        )
                     )
                 ),
             )
+
+
+def initial_baseline_revision():
+    """This function runs the initial baseline revision process.
+
+    🚩 The flow:
+    1. take all historical TSD
+    2. clean concentrations.
+    3. Iterate through each baseline from the seed bank
+        and update with cleaned concentrations.
+
+    ⚠️  The process runs every N seconds where N is usually ~90 days
+    since the selection process is quite complicated from the
+    competition perspective.
+    """
+
+    while True:
+        # Defines the break for collecting enough data
+        sleep(
+            settings.sensors.anomaly_detection.baseline_revision_interval.total_seconds()  # noqa: E501
+        )
+        asyncio.run(_initial_baseline_revision())
+
+
+async def _initial_baseline_revision():
+    # TODO: Add other pre-feature validations
+
+    # Make the revision for each sensor and update it in the database
+    async for sensor in await sensors_services.crud.get_all():
+        logger.info(f"Inital baseline revision for {sensor.name}...")
+
+        try:
+            tsd_set: list[TsdFlat] = await tsd_services.get_last_set_from(
+                sensor_id=sensor.id, timestamp=None
+            )
+        except NotFoundError:
+            raise UnprocessableError(
+                message=(
+                    "The initial baseline revision is possible only in case "
+                    "time series data exists in the database. "
+                    f"Sensor: {sensor.name}"
+                )
+            )
+
+        cleaned_concentrations: NDArray[
+            np.float64
+        ] = await anomaly_detection_services.baselines.clean_concentrations(
+            concentrations=np.array([tsd.ppmv for tsd in tsd_set])
+        )
+
+        # Get the updated initial baseline
+        updated_baseline: aampi = (
+            await anomaly_detection_services.baselines.initial_baseline_update(
+                sensor, cleaned_concentrations
+            )
+        )
+
+        # Update the database record for sensors configurations table
+        await sensors_services.crud.update(
+            sensor_id=sensor.id,
+            configuration_update_schema=(
+                SensorConfigurationUpdatePartialSchema(
+                    anomaly_detection_initial_baseline_raw=pickle.dumps(
+                        updated_baseline
+                    )
+                )
+            ),
+        )

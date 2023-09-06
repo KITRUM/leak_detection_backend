@@ -41,8 +41,8 @@ logger.debug(
     f"{settings.data_lake_consuming_periodicity}"
     "\nThe sensor's anomaly detection baseline best selection interval: "
     f"{settings.sensors.anomaly_detection.baseline_best_selection_interval}"
-    "\nThe sensor's anomaly detection baseline udpate interval: "
-    f"{settings.sensors.anomaly_detection.baseline_update_interval}"
+    "\nThe sensor's anomaly detection baseline revision interval: "
+    f"{settings.sensors.anomaly_detection.baseline_revision_interval}"
     "\n*******************************************************************"
 )
 
@@ -106,8 +106,14 @@ app: FastAPI = factory.create(
         partial(
             processes.run,
             namespace="sensors",
-            key="select_best_baseline",
+            key="select_best_initial_baseline",
             callback=application.sensors.select_best_baseline,
+        ),
+        partial(
+            processes.run,
+            namespace="sensors",
+            key="initial_baseline_revision",
+            callback=application.sensors.initial_baseline_revision,
         ),
     ),
 )

@@ -1,20 +1,13 @@
 """
 This module defines operations with baselines.
-All operations
 """
-from datetime import datetime
 
 import numpy as np
-from loguru import logger
 from numpy.typing import NDArray
 from stumpy import core, stump
 
 from src.config import settings
-from src.domain.sensors.models import Sensor
-from src.domain.tsd import TsdFlat
-from src.domain.tsd import services as tsd_services
 from src.infrastructure.errors import UnprocessableError
-from src.infrastructure.errors.base import NotFoundError
 
 WINDOW_SIZE = settings.anomaly_detection.window_size
 
@@ -22,8 +15,7 @@ __all__ = ("clean_concentrations",)
 
 
 async def clean_concentrations(
-    sensor: Sensor,
-    last_baseline_selection_timestamp: datetime | None,
+    concentrations: NDArray[np.float64],
 ) -> NDArray[np.float64]:
     """After TSD items are selected from the database
     it should be cleaned from anomalies before the selection is done.
@@ -32,25 +24,7 @@ async def clean_concentrations(
     the best baseline selection & baseline update features
     """
 
-    try:
-        tsd_set: list[
-            TsdFlat
-        ] = await tsd_services.get_last_set_from_timestamp(
-            sensor_id=sensor.id, timestamp=last_baseline_selection_timestamp
-        )
-    except NotFoundError:
-        message = (
-            "The baseline selection processing is possible only in case "
-            f"time series data exists in the database. Sensor id: {sensor.id}"
-        )
-        logger.debug(message)
-
-        raise UnprocessableError(message=message)
-
-    # Convert into NDArray[np.float64]
-    tsd_items: NDArray[np.float64] = np.array([tsd.ppmv for tsd in tsd_set])
-
-    if (tsd_set_len := len(tsd_items)) < WINDOW_SIZE:
+    if (tsd_set_len := concentrations.shape[0]) < WINDOW_SIZE:
         raise UnprocessableError(
             message=(
                 f"The amount of time TSD items ({tsd_set_len}) "
@@ -58,10 +32,10 @@ async def clean_concentrations(
             )
         )
 
-    # TODO: Refactor the code below
-
     # TODO: Define the better k value base on the number of days for consuming
-    discords = _get_discords(tsd_items, k=15, normalize=False, finite=False)
+    discords = _get_discords(
+        concentrations, k=15, normalize=False, finite=False
+    )
     max_accept = _give_acceptable_dist(
         tsd_set=np.array(discords[0]), cut=2000, m=5
     )
@@ -78,7 +52,7 @@ async def clean_concentrations(
     delete.sort()
     add = []
     start = 0
-    delete.append(len(tsd_items))
+    delete.append(concentrations.shape[0])
 
     # create the
     for i in delete:
@@ -86,18 +60,16 @@ async def clean_concentrations(
         if a < start:
             a = start
         add.append((start, a))
-        if i + WINDOW_SIZE * 2 < len(tsd_items):
+        if i + WINDOW_SIZE * 2 < concentrations.shape[0]:
             start = i + WINDOW_SIZE * 2
         else:
-            start = len(tsd_items)
+            start = concentrations.shape[0]
     result = np.array([])
 
     for i in add:
         a = i[0]
         b = i[1]
-        result = np.concatenate((result, tsd_items[a:b]))
-
-    # TODO: add smoothing here
+        result = np.concatenate((result, concentrations[a:b]))
 
     return result
 

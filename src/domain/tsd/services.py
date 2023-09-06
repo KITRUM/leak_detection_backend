@@ -1,3 +1,10 @@
+"""
+This module includes time series data services.
+"""
+
+# TODO: This module should be moved to the src/domain/tsd/services/crud.py
+
+
 from datetime import datetime
 
 import numpy as np
@@ -51,9 +58,13 @@ async def get_last_window_size_set(
 
 
 @transaction
-async def get_last_set_from_timestamp(
+async def get_last_set_from(
     sensor_id: int, timestamp: datetime | None = None
 ) -> list[TsdFlat]:
+    """If the timestamp is not provided returns
+    all TSD items from the database for the specific sensor.
+    """
+
     if not timestamp:
         return [
             instance async for instance in TsdRepository().by_sensor(sensor_id)
