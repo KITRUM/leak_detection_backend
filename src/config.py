@@ -61,8 +61,8 @@ class SensorsAnomalyDetectionSettings(BaseModel):
     baseline_best_selection_interval: timedelta = timedelta(days=15)
 
     # This config determines how often the sensor's initial baseline
-    # update is happening. The interval defines how often this process runs.
-    baseline_update_interval: timedelta = timedelta(days=30)
+    # revision is happening. The interval defines how often this process runs.
+    baseline_revision_interval: timedelta = timedelta(days=30)
 
 
 class SensorsSettings(BaseModel):
