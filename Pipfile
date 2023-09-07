@@ -25,6 +25,7 @@ stumpy = "~=1.11"
 tomli = "~=2.0.1"
 uvicorn = "~=0.21.0"
 websockets = "~=11.0"
+itsdangerous = "~=2.1"
 
 [dev-packages]
 black = "~=23.1"
