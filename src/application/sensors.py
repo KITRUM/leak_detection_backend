@@ -41,10 +41,9 @@ from src.domain.sensors import (
     SensorCreateSchema,
 )
 from src.domain.sensors import services as sensors_services
-from src.domain.sensors.models import Sensor
+from src.domain.tsd import TsdFlat
 from src.domain.tsd import services as tsd_services
-from src.domain.tsd.models import TsdFlat
-from src.infrastructure.errors.base import NotFoundError, UnprocessableError
+from src.infrastructure.errors import NotFoundError, UnprocessableError
 
 # NOTE: Once the selected baseline is updated with consumed TSD instances
 #       this list is used as a temporary storage
