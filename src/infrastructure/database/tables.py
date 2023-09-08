@@ -107,6 +107,10 @@ class TemplatesTable(Base):
 class SensorsConfigurationsTable(Base):
     __tablename__ = "sensors_configurations"
 
+    pinned: bool = Column(
+        Boolean, nullable=False, default=False
+    )  # type: ignore[var-annotated]
+
     interactive_feedback_mode: bool = Column(
         Boolean, nullable=False, default=False
     )  # type: ignore[var-annotated]
