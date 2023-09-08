@@ -25,10 +25,15 @@ __all__ = (
 # ********** Sensor Configuration **********
 # ************************************************
 class SensorConfigurationUncommited(InternalModel):
+    """This schema should be used for passing it
+    to the repository operation.
+    """
+
     interactive_feedback_mode: bool
     anomaly_detection_initial_baseline_raw: bytes
     last_baseline_selection_timestamp: datetime | None = None
     last_baseline_update_timestamp: datetime | None = None
+    pinned: bool | None = None
 
     @property
     def anomaly_detection_initial_baseline(self) -> aampi:
@@ -45,6 +50,7 @@ class SensorConfigurationUpdatePartialSchema(InternalModel):
     the repository layer does not care about it.
     """
 
+    pinned: bool | None = None
     interactive_feedback_mode: bool | None = None
     anomaly_detection_initial_baseline_raw: bytes | None = None
     last_baseline_selection_timestamp: datetime | None = None
