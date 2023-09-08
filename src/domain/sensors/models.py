@@ -22,7 +22,7 @@ __all__ = (
 
 
 # ************************************************
-# ********** Sensor Configuration **********
+# ********** Sensor Configuration entities *******
 # ************************************************
 class SensorConfigurationUncommited(InternalModel):
     """This schema should be used for passing it
@@ -62,7 +62,7 @@ class SensorConfigurationFlat(SensorConfigurationUncommited):
 
 
 # ************************************************
-# ********** Sensor **********
+# ********** Sensor entities **********
 # ************************************************
 class SensorBase(InternalModel):
     """This mixin includes shared model fields for all internal models."""
@@ -106,6 +106,9 @@ class SensorFlat(SensorUncommited):
     id: int
 
 
+# ************************************************
+# ********** Aggregates **********
+# ************************************************
 class Sensor(SensorBase):
     """The internal sensor representation with nested data mdoel."""
 
@@ -114,9 +117,6 @@ class Sensor(SensorBase):
     template: Template
 
 
-# ************************************************
-# ********** Aggregates **********
-# ************************************************
 class SensorCreateSchema(InternalModel):
     """This value objects encapsulates all data
     that is used in the sensor's ceration process.
