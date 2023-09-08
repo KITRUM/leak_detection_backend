@@ -17,6 +17,7 @@ class SensorsConfigurationsAdminView(
     column_searchable_list = ("interactive_feedback_mode", "sensor")
     colsort = ("id", "interactive_feedback_mode", "sensor")
     column_details_exclude_list = ("anomaly_detection_initial_baseline_raw",)
+    form_excluded_columns = ("anomaly_detection_initial_baseline_raw",)
 
 
 class SensorsAdminView(ModelView, model=SensorsTable):

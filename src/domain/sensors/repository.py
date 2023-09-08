@@ -1,12 +1,13 @@
 from typing import AsyncGenerator
 
-from sqlalchemy import Result, Select, select
+from sqlalchemy import Result, Select, func, select
 from sqlalchemy.orm import joinedload
 
 from src.infrastructure.database import (
     BaseRepository,
     SensorsConfigurationsTable,
     SensorsTable,
+    TimeSeriesDataTable,
 )
 from src.infrastructure.errors import NotFoundError, UnprocessableError
 
@@ -148,7 +149,7 @@ class SensorsRepository(BaseRepository[SensorsTable]):
             yield Sensor.from_orm(schema)
 
     async def by_template(
-        self, template_id: int, pinned: bool | None = None
+        self, template_id: int, pinned: bool
     ) -> AsyncGenerator[Sensor, None]:
         """Fetch all sensors by template from database.
         The template table is joined.
@@ -179,3 +180,23 @@ class SensorsRepository(BaseRepository[SensorsTable]):
 
         for schema in schemas:
             yield Sensor.from_orm(schema)
+
+    async def tsd_count(self, sensor_id: int) -> int:
+        """Return the number of time series data items by sensor."""
+
+        result: Result = await self.execute(
+            select(func.count(TimeSeriesDataTable.id)).where(
+                getattr(TimeSeriesDataTable, "sensor_id") == sensor_id
+            )
+        )
+        value = result.scalar()
+
+        if not isinstance(value, int):
+            raise UnprocessableError(
+                message=(
+                    "For some reason count function returned not an integer."
+                    f"Value: {value}"
+                ),
+            )
+
+        return value

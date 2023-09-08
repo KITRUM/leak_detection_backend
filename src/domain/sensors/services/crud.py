@@ -7,7 +7,6 @@ from src.infrastructure.errors import UnprocessableError
 from ..models import (
     Sensor,
     SensorConfigurationFlat,
-    SensorConfigurationUpdatePartialSchema,
     SensorCreateSchema,
     SensorUncommited,
     SensorUpdatePartialSchema,
@@ -15,18 +14,6 @@ from ..models import (
 from ..repository import SensorsConfigurationsRepository, SensorsRepository
 
 
-@transaction
-async def get_all() -> AsyncGenerator[Sensor, None]:
-    """Yields all sensors from the database."""
-
-    # HACK: currently the operation looks next:
-    #       async for item in await get_all():
-    #       The operation should work with async for item in get_all()
-
-    return SensorsRepository().all()
-
-
-@transaction
 async def create(schema: SensorCreateSchema) -> Sensor:
     """Create a sensor configuration and the sensor attached."""
 
@@ -50,14 +37,10 @@ async def create(schema: SensorCreateSchema) -> Sensor:
     return sensor
 
 
-@transaction
 async def update(
     sensor_id: int,
     sensor_update_schema: SensorUpdatePartialSchema = (
         SensorUpdatePartialSchema()
-    ),
-    configuration_update_schema: SensorConfigurationUpdatePartialSchema = (
-        SensorConfigurationUpdatePartialSchema()
     ),
 ) -> Sensor:
     """Update the sensor and the configuration in one transaction hop."""
@@ -67,12 +50,6 @@ async def update(
     sensor_repository = SensorsRepository()
     sensor: Sensor = await sensor_repository.get(id_=sensor_id)
 
-    # Update the configuration if defined
-    with suppress(UnprocessableError):
-        await SensorsConfigurationsRepository().update_partially(
-            id_=sensor.configuration.id, schema=configuration_update_schema
-        )
-
     # Update the sensor's payload if defined
     with suppress(UnprocessableError):
         await sensor_repository.update_partially(
@@ -80,16 +57,3 @@ async def update(
         )
 
     return await sensor_repository.get(id_=sensor_id)
-
-
-@transaction
-async def delete(sensor_id: int) -> None:
-    """Delete the sensor and its configuration."""
-
-    # PERF: Abusing the database. (not critical for now)
-
-    sensor_repository = SensorsRepository()
-    sensor: Sensor = await sensor_repository.get(id_=sensor_id)
-
-    await SensorsConfigurationsRepository().delete(sensor.configuration.id)
-    await sensor_repository.delete(sensor.id)
