@@ -4,6 +4,7 @@ from src.presentation import (  # noqa: F401
     events,
     platforms,
     sensors,
+    simulation,
     templates,
     tsd,
 )

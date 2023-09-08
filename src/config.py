@@ -50,6 +50,18 @@ class LoggingSettings(BaseModel):
     compression: str = "zip"
 
 
+# Admin Settings
+class AdminSettings(BaseModel):
+    """Configure the admin panel."""
+
+    title: str = "Leakage detection | by Franatech team"
+    base_url: str = "/admin"
+    templates_dir: str = "templates/admin"
+    logo_url: str = "https://preview.tabler.io/static/logo-white.svg"
+    debug: bool = False
+
+
+# Sensors Settings
 class SensorsAnomalyDetectionSettings(BaseModel):
     """This model aggregates anomaly detection
     settings for all sensors.
@@ -71,6 +83,7 @@ class SensorsSettings(BaseModel):
     ) = SensorsAnomalyDetectionSettings()
 
 
+# Anomaly Detection Settings
 class AnomalyDetectionSettings(BaseModel):
     # Defines the extension of the file with the matrix profile data.
     mpstream_file_extension: str = ".mpstream"
@@ -95,6 +108,7 @@ class AnomalyDetectionSettings(BaseModel):
     interactive_feedback_save_max_limit: int = 1000
 
 
+# Simulation Settings
 class SimulationParameters(InternalModel):
     seawater_temperature: np.float64 = np.float64(6.2)
     depth: np.float64 = np.float64(70)
@@ -145,6 +159,7 @@ class Settings(BaseSettings):
     # Application configuration
     public_api: PublicApiSettings = PublicApiSettings()
     logging: LoggingSettings = LoggingSettings()
+    admin: AdminSettings = AdminSettings()
 
     sensors: SensorsSettings = SensorsSettings()
     anomaly_detection: AnomalyDetectionSettings = AnomalyDetectionSettings()

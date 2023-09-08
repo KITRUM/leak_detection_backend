@@ -3,6 +3,7 @@ from typing import Callable, Coroutine
 
 from fastapi import FastAPI
 from loguru import logger
+from sqladmin import Admin
 
 from src import application, debug, presentation
 from src.config import settings
@@ -12,6 +13,7 @@ from src.infrastructure.application import (
     processes,
     tasks,
 )
+from src.infrastructure.database import engine
 
 # Adjust the logging
 # -------------------------------
@@ -117,3 +119,26 @@ app: FastAPI = factory.create(
         ),
     ),
 )
+
+
+# Adjust the admin panel
+# -------------------------------
+admin = Admin(
+    app=app,
+    engine=engine,
+    title=settings.admin.title,
+    base_url=settings.admin.base_url,
+    templates_dir=settings.admin.templates_dir,
+    logo_url=settings.admin.logo_url,
+    debug=settings.admin.debug,
+)
+
+admin.add_view(presentation.templates.TemplatesAdminView)
+admin.add_view(presentation.sensors.SensorsAdminView)
+admin.add_view(presentation.sensors.SensorsConfigurationsAdminView)
+admin.add_view(presentation.tsd.TimeSeriesDataAdminView)
+admin.add_view(presentation.anomaly_detection.AnomalyDetectionsAdminView)
+admin.add_view(presentation.simulation.SimulationDetectionRatesAdminView)
+admin.add_view(presentation.estimation.EstimationAdminView)
+admin.add_view(presentation.events.templates.TemplateEventsAdminView)
+admin.add_view(presentation.events.sensors.SensorEventsAdminView)
