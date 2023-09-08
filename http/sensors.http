@@ -1,4 +1,4 @@
-### Create a new sensor
+### Create a new sensor and its configuration
 POST {{HTTP__BASE_URL}}/templates/1/sensors
 Content-Type: application/json
 
@@ -10,28 +10,39 @@ Content-Type: application/json
 }
 
 
+
 ### Get the list of all sensors within the template
-GET {{HTTP__BASE_URL}}/templates/1/sensors?pinned=true
+GET {{HTTP__BASE_URL}}/templates/1/sensors
 
 
-### Retrieve the sensor
+
+### Retrieve the sensor with its configuration
 GET {{HTTP__BASE_URL}}/sensors/1
 
 
-### Update partially the sensor
+
+### Update partially
 PATCH {{HTTP__BASE_URL}}/sensors/1
 Content-Type: application/json
 
 {
 
     "x": 2,
-    "y": 2,
-    "configuration": {
-        "interactiveFeedbackMode": false,
-        "pinned": true
-    }
+    "y": 3
+
 }
 
 
-### Delete the sensor
-DELETE {{HTTP__BASE_URL}}/sensors/3
+
+### Delete sensor and its configuration
+DELETE {{HTTP__BASE_URL}}/sensors/1
+
+
+
+### Interactive feedback mode toggle
+PATCH {{HTTP__BASE_URL}}/sensors/1/interactive-feedback-mode/toggle
+
+
+
+### Toggle the pin status
+PATCH {{HTTP__BASE_URL}}/sensors/1/pin/toggle

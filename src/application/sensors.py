@@ -24,6 +24,7 @@ import asyncio
 import pickle
 from collections import defaultdict
 from time import sleep
+from typing import Coroutine
 
 import numpy as np
 from loguru import logger
@@ -39,10 +40,13 @@ from src.domain.sensors import (
     SensorConfigurationUncommited,
     SensorConfigurationUpdatePartialSchema,
     SensorCreateSchema,
+    SensorsConfigurationsRepository,
+    SensorsRepository,
 )
 from src.domain.sensors import services as sensors_services
 from src.domain.tsd import TsdFlat
 from src.domain.tsd import services as tsd_services
+from src.infrastructure.database import transaction
 from src.infrastructure.errors import NotFoundError, UnprocessableError
 
 # NOTE: Once the selected baseline is updated with consumed TSD instances
@@ -57,6 +61,10 @@ UPDATED_BASELINES_BY_SENSOR: dict[int, dict[str, aampi]] = defaultdict(dict)
 WINDOW_SIZE: int = settings.anomaly_detection.window_size
 
 
+# ************************************************
+# ********** CRUD operations **********
+# ************************************************
+@transaction
 async def create(template_id: int, sensor_payload: SensorBase) -> Sensor:
     """This function takes care about the sensor creation.
     The sensor creation consist of:
@@ -86,6 +94,87 @@ async def create(template_id: int, sensor_payload: SensorBase) -> Sensor:
     return await sensors_services.crud.create(create_schema)
 
 
+@transaction
+async def delete(sensor_id: int) -> None:
+    """This function takes care about the sensor deletion.
+    The sensor deletion consist of:
+        1. deleting the sensor's configuration
+        2. deleting the sensor
+    """
+
+    configuration_repository = SensorsConfigurationsRepository()
+    sensors_repository = SensorsRepository()
+    sensor: Sensor = await sensors_repository.get(id_=sensor_id)
+
+    tasks: list[Coroutine] = [
+        configuration_repository.delete(id_=sensor.configuration.id),
+        sensors_repository.delete(id_=sensor_id),
+    ]
+
+    await asyncio.gather(*tasks)
+
+
+@transaction
+async def toggle_interactive_feedback_mode(sensor_id: int) -> Sensor:
+    """This function takes care about the sensor's
+    interactive feedback mode toggling.
+
+    Toggle feature is available only if the sensor has enough
+    time series data to calculate the baseline.
+    """
+
+    sensor_repository = SensorsRepository()
+    tsd_amount: int = await sensor_repository.tsd_count(sensor_id=sensor_id)
+
+    if tsd_amount < WINDOW_SIZE:
+        raise UnprocessableError(
+            message=(
+                "The interactive feedback mode is not available "
+                "until the first time series data is collected."
+                f"\nCurrent amount of time series data: {tsd_amount}"
+            )
+        )
+
+    sensor: Sensor = await sensor_repository.get(id_=sensor_id)
+
+    await SensorsConfigurationsRepository().update_partially(
+        id_=sensor.configuration.id,
+        schema=SensorConfigurationUpdatePartialSchema(
+            interactive_feedback_mode=(
+                # Reverse the current state
+                not sensor.configuration.interactive_feedback_mode
+            )
+        ),
+    )
+
+    # Return the rich data model
+    return await sensor_repository.get(id_=sensor_id)
+
+
+@transaction
+async def toggle_pin(sensor_id: int) -> Sensor:
+    """This function takes care about the sensor's pin state toggling."""
+
+    sensor_repository = SensorsRepository()
+    sensor: Sensor = await sensor_repository.get(id_=sensor_id)
+
+    await SensorsConfigurationsRepository().update_partially(
+        id_=sensor.configuration.id,
+        schema=SensorConfigurationUpdatePartialSchema(
+            pinned=(
+                # Reverse the current state
+                not sensor.configuration.pinned
+            )
+        ),
+    )
+
+    # Return the rich data model
+    return await sensor_repository.get(id_=sensor_id)
+
+
+# ************************************************
+# ********** Backgorund processes  **********
+# ************************************************
 def select_best_baseline():
     """This function runs the baseline selection process.
 
@@ -111,6 +200,7 @@ def select_best_baseline():
         asyncio.run(_select_best_baseline())
 
 
+@transaction
 async def _select_best_baseline():
     # WARNING: Other pre-feature validations are not added
 
@@ -120,7 +210,7 @@ async def _select_best_baseline():
 
     # Select the best baseline for each sensor and update it in the database
     # if seed baseline feets the needs
-    async for sensor in await sensors_services.crud.get_all():
+    async for sensor in SensorsRepository().all():
         logger.info(f"Best baseline seelction for {sensor.name}...")
 
         try:
@@ -154,13 +244,12 @@ async def _select_best_baseline():
                 f"\nCurrent baseline is taken from the file: "
                 f"{best_baseline.filename}"
             )
-            await sensors_services.crud.update(
-                sensor_id=sensor.id,
-                configuration_update_schema=(
-                    SensorConfigurationUpdatePartialSchema(
-                        anomaly_detection_initial_baseline_raw=pickle.dumps(
-                            best_baseline
-                        )
+            # Update the configuration with the new baseline
+            await SensorsConfigurationsRepository().update_partially(
+                id_=sensor.configuration.id,
+                schema=SensorConfigurationUpdatePartialSchema(
+                    anomaly_detection_initial_baseline_raw=pickle.dumps(
+                        best_baseline
                     )
                 ),
             )
@@ -188,11 +277,12 @@ def initial_baseline_revision():
         asyncio.run(_initial_baseline_revision())
 
 
+@transaction
 async def _initial_baseline_revision():
     # TODO: Add other pre-feature validations
 
     # Make the revision for each sensor and update it in the database
-    async for sensor in await sensors_services.crud.get_all():
+    async for sensor in SensorsRepository().all():
         logger.info(f"Inital baseline revision for {sensor.name}...")
 
         try:
@@ -221,14 +311,12 @@ async def _initial_baseline_revision():
             )
         )
 
-        # Update the database record for sensors configurations table
-        await sensors_services.crud.update(
-            sensor_id=sensor.id,
-            configuration_update_schema=(
-                SensorConfigurationUpdatePartialSchema(
-                    anomaly_detection_initial_baseline_raw=pickle.dumps(
-                        updated_baseline
-                    )
+        # Update the configuration with the new baseline
+        await SensorsConfigurationsRepository().update_partially(
+            id_=sensor.configuration.id,
+            schema=SensorConfigurationUpdatePartialSchema(
+                anomaly_detection_initial_baseline_raw=pickle.dumps(
+                    updated_baseline
                 )
             ),
         )
