@@ -100,6 +100,9 @@ class TemplatesTable(Base):
     sensors = relationship("SensorsTable", back_populates="template")
     events = relationship("TemplatesEventsTable", back_populates="template")
 
+    def __str__(self) -> str:
+        return str(self.name)
+
 
 class SensorsConfigurationsTable(Base):
     __tablename__ = "sensors_configurations"
@@ -126,6 +129,9 @@ class SensorsConfigurationsTable(Base):
     sensor = relationship(
         "SensorsTable", uselist=False, back_populates="configuration"
     )
+
+    def __str__(self) -> str:
+        return str(self.id)
 
 
 class SensorsTable(Base):
@@ -162,6 +168,9 @@ class SensorsTable(Base):
     )
     events = relationship("SensorsEventsTable", back_populates="sensor")
 
+    def __str__(self) -> str:
+        return str(self.name)
+
 
 class TimeSeriesDataTable(Base):
     __tablename__ = "time_series_data"
@@ -184,6 +193,9 @@ class TimeSeriesDataTable(Base):
         uselist=False,
         back_populates="time_series_data",
     )
+
+    def __str__(self) -> str:
+        return f"{self.ppmv} | {self.timestamp}"
 
 
 class AnomalyDetectionsTable(Base):
@@ -213,6 +225,9 @@ class AnomalyDetectionsTable(Base):
         back_populates="anomaly_detection",
     )
 
+    def __str__(self) -> str:
+        return f"{self.value} | {self.interactive_feedback_mode}"
+
 
 class SimulationDetectionRatesTable(Base):
     __tablename__ = "simulation_detection_rates"
@@ -234,6 +249,9 @@ class SimulationDetectionRatesTable(Base):
         back_populates="simulation_detection_rates",
     )
 
+    def __str__(self) -> str:
+        return str(self.rate)
+
 
 class EstimationsSummariesTable(Base):
     __tablename__ = "estimations_summaries"
@@ -254,6 +272,9 @@ class EstimationsSummariesTable(Base):
         "SensorsTable", uselist=False, back_populates="estimation_summary_set"
     )
 
+    def __str__(self) -> str:
+        return str(self.result)
+
 
 class TemplatesEventsTable(Base):
     __tablename__ = "templates_events"
@@ -269,6 +290,9 @@ class TemplatesEventsTable(Base):
         "TemplatesTable", uselist=False, back_populates="events"
     )
 
+    def __str__(self) -> str:
+        return str(self.type)
+
 
 class SensorsEventsTable(Base):
     __tablename__ = "sensors_events"
@@ -283,3 +307,6 @@ class SensorsEventsTable(Base):
     sensor = relationship(
         "SensorsTable", uselist=False, back_populates="events"
     )
+
+    def __str__(self) -> str:
+        return str(self.type)
