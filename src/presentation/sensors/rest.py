@@ -53,12 +53,12 @@ async def sensor_create(
 @router.get("/templates/{template_id}/sensors")
 @transaction
 async def sensors_list(
-    _: Request, template_id: int
+    _: Request, template_id: int, pinned: bool | None = None
 ) -> ResponseMulti[SensorPublic]:
     """Return the list of platforms that are provided."""
 
     sensors: AsyncGenerator[Sensor, None] = SensorsRepository().by_template(
-        template_id
+        template_id=template_id, pinned=pinned
     )
     sensors_public = [
         SensorPublic.from_orm(sensor) async for sensor in sensors
