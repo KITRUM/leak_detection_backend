@@ -148,19 +148,29 @@ class SensorsRepository(BaseRepository[SensorsTable]):
             yield Sensor.from_orm(schema)
 
     async def by_template(
-        self, template_id: int
+        self, template_id: int, pinned: bool | None = None
     ) -> AsyncGenerator[Sensor, None]:
         """Fetch all sensors by template from database.
         The template table is joined.
+
+        If pinned is specified - filter by `configuration.pinned`.
         """
+
+        filters = [
+            getattr(self.schema_class, "template_id") == template_id,
+        ]
+
+        if pinned is not None:
+            filters.append(SensorsConfigurationsTable.pinned == pinned)
 
         query: Select = (
             select(self.schema_class)
-            .where(getattr(self.schema_class, "template_id") == template_id)
+            .join(self.schema_class.configuration)
             .options(
                 joinedload(self.schema_class.template),
                 joinedload(self.schema_class.configuration),
             )
+            .where(*filters)
         )
         result: Result = await self._session.execute(query)
 
