@@ -11,7 +11,7 @@ Content-Type: application/json
 
 
 ### Get the list of all sensors within the template
-GET {{HTTP__BASE_URL}}/templates/1/sensors
+GET {{HTTP__BASE_URL}}/templates/1/sensors?pinned=true
 
 
 ### Retrieve the sensor
@@ -27,7 +27,8 @@ Content-Type: application/json
     "x": 2,
     "y": 2,
     "configuration": {
-        "interactiveFeedbackMode": false
+        "interactiveFeedbackMode": false,
+        "pinned": true
     }
 }
 
