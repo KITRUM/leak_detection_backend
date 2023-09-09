@@ -16,6 +16,11 @@ GET {{HTTP__BASE_URL}}/templates/1/sensors
 
 
 
+### Get the filtered list of sensors
+GET {{HTTP__BASE_URL}}/sensors?pinned=false
+
+
+
 ### Retrieve the sensor with its configuration
 GET {{HTTP__BASE_URL}}/sensors/1
 
