@@ -137,7 +137,7 @@ class SensorsRepository(BaseRepository[SensorsTable]):
     async def all(self) -> AsyncGenerator[Sensor, None]:
         """Fetch all sensors from database."""
 
-        result: Result = await self.execute(
+        result: Result = await self._session.execute(
             select(self.schema_class).options(
                 joinedload(self.schema_class.template),
                 joinedload(self.schema_class.configuration),
@@ -148,23 +148,19 @@ class SensorsRepository(BaseRepository[SensorsTable]):
         for schema in schemas:
             yield Sensor.from_orm(schema)
 
-    async def by_template(
-        self, template_id: int, pinned: bool
+    async def filter(
+        self, pinned: bool | None = None
     ) -> AsyncGenerator[Sensor, None]:
-        """Fetch all sensors by template from database.
-        The template table is joined.
+        """Select with high level filters."""
 
-        If pinned is specified - filter by `configuration.pinned`.
-        """
+        # TODO: Add the template here and create the uniform interface
 
-        filters = [
-            getattr(self.schema_class, "template_id") == template_id,
-        ]
+        filters = []
 
         if pinned is not None:
             filters.append(SensorsConfigurationsTable.pinned == pinned)
 
-        query: Select = (
+        result: Result = await self._session.execute(
             select(self.schema_class)
             .join(self.schema_class.configuration)
             .options(
@@ -173,7 +169,28 @@ class SensorsRepository(BaseRepository[SensorsTable]):
             )
             .where(*filters)
         )
-        result: Result = await self._session.execute(query)
+        schemas = result.scalars().all()
+
+        for schema in schemas:
+            yield Sensor.from_orm(schema)
+
+    async def by_template(
+        self, template_id: int
+    ) -> AsyncGenerator[Sensor, None]:
+        """Fetch all sensors by template from database.
+        The template table is joined.
+        """
+
+        result: Result = await self._session.execute(
+            select(self.schema_class)
+            .options(
+                joinedload(self.schema_class.template),
+                joinedload(self.schema_class.configuration),
+            )
+            .where(
+                getattr(self.schema_class, "template_id") == template_id,
+            )
+        )
 
         if not (schemas := result.scalars().all()):
             raise NotFoundError

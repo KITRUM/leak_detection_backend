@@ -210,7 +210,7 @@ async def _select_best_baseline():
 
     # Select the best baseline for each sensor and update it in the database
     # if seed baseline feets the needs
-    async for sensor in SensorsRepository().all():
+    async for sensor in SensorsRepository().filter():
         logger.info(f"Best baseline seelction for {sensor.name}...")
 
         try:
@@ -282,7 +282,7 @@ async def _initial_baseline_revision():
     # TODO: Add other pre-feature validations
 
     # Make the revision for each sensor and update it in the database
-    async for sensor in SensorsRepository().all():
+    async for sensor in SensorsRepository().filter():
         logger.info(f"Inital baseline revision for {sensor.name}...")
 
         try:
