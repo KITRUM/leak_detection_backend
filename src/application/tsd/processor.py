@@ -65,7 +65,7 @@ async def process(sensor: Sensor):
 async def create_tasks_for_existed_sensors_process():
     """Run a batch of background tasks."""
 
-    async for sensor in SensorsRepository().all():
+    async for sensor in SensorsRepository().filter():
         await tasks.run(
             namespace="sensor_tsd_process",
             key=sensor.id,
