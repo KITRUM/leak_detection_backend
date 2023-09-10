@@ -28,9 +28,6 @@ def dispatch(tsd: Tsd) -> AnomalyDetectionUncommited:
 
     # Create default matrix profile if not exist
     if not (matrix_profile := MATRIX_PROFILES.get(tsd.sensor.id)):
-        logger.success(
-            f"A new matrix profile is created for the sensor {tsd.sensor.id}"
-        )
         baseline: aampi = (
             tsd.sensor.configuration.anomaly_detection_initial_baseline
         )
@@ -43,6 +40,10 @@ def dispatch(tsd: Tsd) -> AnomalyDetectionUncommited:
             fb_baseline_start=baseline,
         )
         MATRIX_PROFILES[tsd.sensor.id] = matrix_profile
+
+        logger.success(
+            f"A new matrix profile is created for the sensor {tsd.sensor.id}"
+        )
 
     # For the first `window size` number of items we receive it is needed
     # skip processing for populating the first matrix profile
