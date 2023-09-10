@@ -1,7 +1,6 @@
 from contextlib import suppress
-from typing import Any, AsyncGenerator
+from typing import Any
 
-from src.infrastructure.database import transaction
 from src.infrastructure.errors import UnprocessableError
 
 from ..models import (

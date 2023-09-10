@@ -167,7 +167,7 @@ class SensorsRepository(BaseRepository[SensorsTable]):
                 joinedload(self.schema_class.template),
                 joinedload(self.schema_class.configuration),
             )
-            .where(*filters)
+            .where(*filters)  # type: ignore[arg-type]
         )
         schemas = result.scalars().all()
 
