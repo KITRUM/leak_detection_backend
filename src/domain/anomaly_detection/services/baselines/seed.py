@@ -56,15 +56,13 @@ def by_level(level: str) -> aampi:
     This baseline is using as an initial baseline on sensor creation.
     """
 
+    path: Path = settings.seed_dir / "baselines/initial"
+
     match level:
         case "low":
-            return pickle.load(
-                open(f"{settings.seed_dir}/baselines/low.mpstream", "rb")
-            )
+            return pickle.load(open(path / "low.mpstream", "rb"))
         case "high":
-            return pickle.load(
-                open(f"{settings.seed_dir}/baselines/high.mpstream", "rb")
-            )
+            return pickle.load(open(path / "high.mpstream", "rb"))
         case _:
             raise NotFoundError(
                 message=f"Can not find the initial baseline for {level=}"
