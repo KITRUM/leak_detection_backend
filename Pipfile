@@ -21,7 +21,7 @@ python-dateutil = "~=2.8"
 python-multipart = "~=0.0.6"
 scikit-learn = "~=1.2"
 sqladmin = "~= 0.14"
-stumpy = "~=1.11"
+stumpy = "~=1.11.1"  # 1.12.x has breaking changes. Issue https://github.com/TDAmeritrade/stumpy/issues/914
 tomli = "~=2.0.1"
 uvicorn = "~=0.21.0"
 websockets = "~=11.0"
