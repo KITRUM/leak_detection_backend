@@ -32,10 +32,12 @@ def dispatch(tsd: Tsd) -> AnomalyDetectionUncommited:
             tsd.sensor.configuration.anomaly_detection_initial_baseline
         )
 
+        max_dis: np.float64 = np.float64(max(baseline.P_))
+
         matrix_profile = MatrixProfile(
-            max_dis=np.float64(max(baseline.P_)),
+            max_dis=max_dis,
             baseline=baseline,
-            fb_max_dis=np.float64(max(baseline.P_)),
+            fb_max_dis=max_dis,
             fb_baseline=baseline,
             fb_baseline_start=baseline,
         )
