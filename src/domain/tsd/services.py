@@ -53,6 +53,7 @@ async def get_last_window_size_set(
             sensor_id=sensor_id,
             last_id=last_id,
             limit=settings.anomaly_detection.window_size,
+            order_by_desc=True,
         )
     ]
 
@@ -67,12 +68,15 @@ async def get_last_set_from(
 
     if not timestamp:
         return [
-            instance async for instance in TsdRepository().by_sensor(sensor_id)
+            instance
+            async for instance in TsdRepository().by_sensor(
+                sensor_id, order_by_desc=True
+            )
         ]
 
     return [
         instance
         async for instance in TsdRepository().by_sensor(
-            sensor_id=sensor_id, timestamp_from=timestamp
+            sensor_id=sensor_id, timestamp_from=timestamp, order_by_desc=True
         )
     ]

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import AsyncGenerator
 
-from sqlalchemy import Result, Select, desc, select
+from sqlalchemy import Result, Select, asc, desc, select
 from sqlalchemy.orm import joinedload
 
 from src.domain.tsd.models import Tsd, TsdFlat, TsdUncommited
@@ -53,6 +53,7 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
         last_id: int | None = None,
         limit: int | None = None,
         timestamp_from: datetime | None = None,
+        order_by_desc: bool = False,
     ) -> AsyncGenerator[TsdFlat, None]:
         """Fetch all time series data by sensor from database.
         The sensor table is joined.
@@ -63,14 +64,20 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
                  be in the results
 
         timestamp_from: datetime | None -- determines the timestamp which
-                        used as a start time point
+                 used as a start time point
+
+        order_by_desc: bool -- determines the order of results. Descending
+                 is used by default.
         """
 
-        query: Select = (
-            select(self.schema_class)
-            .where(getattr(self.schema_class, "sensor_id") == sensor_id)
-            .order_by(desc(self.schema_class.id))
+        query: Select = select(self.schema_class).where(
+            getattr(self.schema_class, "sensor_id") == sensor_id
         )
+
+        if order_by_desc:
+            query = query.order_by(desc(self.schema_class.id))
+        else:
+            query = query.order_by(asc(self.schema_class.id))
 
         if last_id:
             query = query.where(
