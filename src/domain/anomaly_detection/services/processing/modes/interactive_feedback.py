@@ -4,8 +4,8 @@ from src.domain.tsd import Tsd
 from src.infrastructure.cache import Cache
 from src.infrastructure.errors import NotFoundError
 
-from ...constants import CacheNamespace
-from ...models import (
+from ....constants import CacheNamespace
+from ....models import (
     AnomalyDetectionUncommited,
     AnomalyDeviation,
     MatrixProfile,

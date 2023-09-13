@@ -221,7 +221,7 @@ async def _select_best_baseline():
         except NotFoundError:
             raise UnprocessableError(
                 message=(
-                    "The initial baseline revision is possible only in case "
+                    "The initial baseline augmentation is possible only in case "
                     "time series data exists in the database. "
                     f"Sensor: {sensor.name}"
                 )
@@ -255,8 +255,8 @@ async def _select_best_baseline():
             )
 
 
-def initial_baseline_revision():
-    """This function runs the initial baseline revision process.
+def initial_baseline_augmentation():
+    """This function runs the initial baseline augmentation/update process.
 
     🚩 The flow:
     1. take all historical TSD
@@ -272,18 +272,18 @@ def initial_baseline_revision():
     while True:
         # Defines the break for collecting enough data
         sleep(
-            settings.sensors.anomaly_detection.baseline_revision_interval.total_seconds()  # noqa: E501
+            settings.sensors.anomaly_detection.baseline_augmentation_interval.total_seconds()  # noqa: E501
         )
-        asyncio.run(_initial_baseline_revision())
+        asyncio.run(_initial_baseline_augmentation())
 
 
 @transaction
-async def _initial_baseline_revision():
+async def _initial_baseline_augmentation():
     # TODO: Add other pre-feature validations
 
-    # Make the revision for each sensor and update it in the database
+    # Make the augmentation for each sensor and update it in the database
     async for sensor in SensorsRepository().filter():
-        logger.info(f"Inital baseline revision for {sensor.name}...")
+        logger.info(f"Inital baseline augmentation for {sensor.name}...")
 
         try:
             tsd_set: list[TsdFlat] = await tsd_services.get_last_set_from(
@@ -292,8 +292,8 @@ async def _initial_baseline_revision():
         except NotFoundError:
             raise UnprocessableError(
                 message=(
-                    "The initial baseline revision is possible only in case "
-                    "time series data exists in the database. "
+                    "The initial baseline augmentation is possible "
+                    "only in case time series data exists in the database. "
                     f"Sensor: {sensor.name}"
                 )
             )
@@ -304,11 +304,9 @@ async def _initial_baseline_revision():
             concentrations=np.array([tsd.ppmv for tsd in tsd_set])
         )
 
-        # Get the updated initial baseline
-        updated_baseline: aampi = (
-            await anomaly_detection_services.baselines.initial_baseline_update(
-                sensor, cleaned_concentrations
-            )
+        # Get the updated initial baseline after the augmentation
+        updated_baseline: aampi = await anomaly_detection_services.baselines.initial_baseline_augment(
+            sensor, cleaned_concentrations
         )
 
         # Update the configuration with the new baseline
