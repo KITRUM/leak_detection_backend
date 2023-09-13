@@ -6,7 +6,7 @@ It is not placed in the infrastructure layer,
 since it depends on internal data models.
 
 ⚠️ Probably this module should be placed between application and domain layers.
-
+Or it should be placed in the infrastructure layer which is more preferable.
 """
 
 import asyncio
@@ -69,8 +69,6 @@ class DataLake:
 
     # Uses for background processing by simulation processing
     anomaly_detections_for_simulation: LakeItem[AnomalyDetection]
-    # Uses for background processing by sensors events engine
-    anomaly_detections_for_events: LakeItem[AnomalyDetection]
     # Uses by websocket connection
     anomaly_detections_by_sensor: dict[int, LakeItem[AnomalyDetection]]
 
@@ -80,19 +78,18 @@ class DataLake:
     # Storage for reducing the database usage. Uses by websocket connection
     estimation_summary_set_by_sensor: dict[int, LakeItem[EstimationSummary]]
 
-    # Events
+    # Events [sensors]
     events_by_sensor: dict[int, LakeItem[sensors.Event]]
+
+    # Events [templates]
     events_by_template: dict[int, LakeItem[templates.Event]]
 
-
-# TODO: Add more limits
 
 data_lake = DataLake(
     time_series_data=LakeItem[Tsd](),
     time_series_data_by_sensor=defaultdict(partial(LakeItem[Tsd])),
     # Anomaly detection
     anomaly_detections_for_simulation=LakeItem[AnomalyDetection](limit=10),
-    anomaly_detections_for_events=LakeItem[AnomalyDetection](),
     anomaly_detections_by_sensor=defaultdict(
         partial(LakeItem[AnomalyDetection])
     ),
@@ -104,8 +101,9 @@ data_lake = DataLake(
     estimation_summary_set_by_sensor=defaultdict(
         partial(LakeItem[EstimationSummary], limit=10)
     ),
-    # Events
+    # Events [sensors]
     events_by_sensor=defaultdict(partial(LakeItem[sensors.Event], limit=1)),
+    # Events [templates]
     events_by_template=defaultdict(
         partial(LakeItem[templates.Event], limit=1)
     ),

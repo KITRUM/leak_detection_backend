@@ -20,6 +20,7 @@ This package includes baselines-related components:
     2. ✨ sensor initial baseline update background feature
 """
 
+
 import asyncio
 import pickle
 from collections import defaultdict
@@ -221,8 +222,8 @@ async def _select_best_baseline():
         except NotFoundError:
             raise UnprocessableError(
                 message=(
-                    "The initial baseline augmentation is possible only in case "
-                    "time series data exists in the database. "
+                    "The initial baseline augmentation is possible "
+                    "only in case time series data exists in the database. "
                     f"Sensor: {sensor.name}"
                 )
             )
@@ -281,6 +282,8 @@ def initial_baseline_augmentation():
 async def _initial_baseline_augmentation():
     # TODO: Add other pre-feature validations
 
+    baselines_services = anomaly_detection_services.baselines  # alias
+
     # Make the augmentation for each sensor and update it in the database
     async for sensor in SensorsRepository().filter():
         logger.info(f"Inital baseline augmentation for {sensor.name}...")
@@ -300,13 +303,15 @@ async def _initial_baseline_augmentation():
 
         cleaned_concentrations: NDArray[
             np.float64
-        ] = await anomaly_detection_services.baselines.clean_concentrations(
+        ] = await baselines_services.clean_concentrations(
             concentrations=np.array([tsd.ppmv for tsd in tsd_set])
         )
 
         # Get the updated initial baseline after the augmentation
-        updated_baseline: aampi = await anomaly_detection_services.baselines.initial_baseline_augment(
-            sensor, cleaned_concentrations
+        updated_baseline: aampi = (
+            await baselines_services.initial_baseline_augment(
+                sensor, cleaned_concentrations
+            )
         )
 
         # Update the configuration with the new baseline

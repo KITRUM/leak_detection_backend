@@ -1,15 +1,11 @@
 from collections import defaultdict
 from functools import partial
 
-from src.application.data_lake import data_lake
 from src.domain.events.sensors import Event as SensorEvent
-from src.domain.events.templates import (
-    Event,
-    EventType,
-    EventUncommited,
-    services,
-)
 from src.infrastructure.errors.base import BaseError
+
+from ..models import Event, EventType, EventUncommited
+from . import crud
 
 TEMPLATES_CRITICAL_EVENT: dict[int, dict[int, bool | None]] = defaultdict(
     partial(defaultdict, lambda: None)  # type: ignore[arg-type]
@@ -111,9 +107,6 @@ async def process(sensor_event: SensorEvent):
         # If the event rate of the template did not change, then skip
         return
 
-    event: Event = await services.create(
+    _: Event = await crud.create(
         EventUncommited(type=type_, template_id=sensor.template_id)
     )
-
-    # Update the data lake
-    data_lake.events_by_template[sensor.template_id].storage.append(event)

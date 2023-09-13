@@ -78,12 +78,6 @@ startup_tasks.extend(
             key="processing",
             coro=application.estimation.process,
         ),
-        partial(
-            tasks.run,
-            namespace="events",
-            key="process",
-            coro=application.events.process,
-        ),
     ]
 )
 
@@ -101,7 +95,6 @@ app: FastAPI = factory.create(
         presentation.anomaly_detection.router,
         presentation.estimation.router,
         presentation.events.sensors.router,
-        presentation.events.templates.router,
     ),
     startup_tasks=startup_tasks,
     startup_processes=(
@@ -140,5 +133,4 @@ admin.add_view(presentation.tsd.TimeSeriesDataAdminView)
 admin.add_view(presentation.anomaly_detection.AnomalyDetectionsAdminView)
 admin.add_view(presentation.simulation.SimulationDetectionRatesAdminView)
 admin.add_view(presentation.estimation.EstimationAdminView)
-admin.add_view(presentation.events.templates.TemplateEventsAdminView)
 admin.add_view(presentation.events.sensors.SensorEventsAdminView)
