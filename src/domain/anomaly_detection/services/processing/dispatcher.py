@@ -10,7 +10,8 @@ from src.infrastructure.cache import Cache
 
 from ...constants import CacheNamespace
 from ...models import AnomalyDetectionUncommited, MatrixProfile
-from . import interactive_feedback_mode, normal_mode
+from .modes import interactive_feedback as interactive_feedback_mode
+from .modes import normal as normal_mode
 
 __all__ = ("dispatch",)
 

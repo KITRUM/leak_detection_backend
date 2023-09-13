@@ -1,6 +1,6 @@
 from src.domain.tsd import Tsd
 
-from ...models import (
+from ....models import (
     AnomalyDetectionUncommited,
     AnomalyDeviation,
     MatrixProfile,
