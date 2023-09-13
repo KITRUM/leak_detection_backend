@@ -32,9 +32,7 @@ exclude = [
     "venv",
     "Makefile",
     "migrations",
-    "simulator",
-    "anomaly_detector",
-    "estimator"
+    "plume2d.py"
 ]
 
 
@@ -99,7 +97,6 @@ omit = [
     "*/conftest.py",
     "*/test_*.py",
     "*/migrations/",
-    "*/anomaly_detector/",
 ]
 
 [tool.mypy]
@@ -112,7 +109,7 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 show_error_codes = true
 namespace_packages = true
-exclude = ["migrations", "estimation", "database"]
+exclude = ["migrations", "estimation", "database", "plume2d.py"]
 
 # Silint "type import errors" as our 3rd-party libs does not have types
 # Check: https://mypy.readthedocs.io/en/latest/config_file.html#import-discovery
