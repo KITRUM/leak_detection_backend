@@ -5,7 +5,7 @@ from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
 from src.application.data_lake import data_lake
-from src.domain.events.sensors import services as events_services
+from src.domain.events.sensors import services
 from src.domain.events.sensors.models import EventFlat
 from src.infrastructure.contracts import Response
 from src.infrastructure.errors import NotFoundError
@@ -27,7 +27,7 @@ async def sensor_events(ws: WebSocket, sensor_id: int):
 
     # Just skip if there is no historical data in the database
     with suppress(NotFoundError):
-        event_flat: EventFlat = await events_services.get_last(sensor_id)
+        event_flat: EventFlat = await services.crud.get_last(sensor_id)
         event_public = EventPublic(
             id=event_flat.id,
             type=event_flat.type,

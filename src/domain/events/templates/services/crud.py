@@ -1,7 +1,9 @@
 from src.infrastructure.database.services.transaction import transaction
 
-from .models import Event, EventFlat, EventUncommited
-from .repository import TemplatesEventsRepository
+from ..models import Event, EventFlat, EventUncommited
+from ..repository import TemplatesEventsRepository
+
+__all__ = ("create", "get_historical_data")
 
 
 @transaction

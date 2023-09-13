@@ -10,7 +10,9 @@ It depends on:
 """
 
 from src.application.data_lake import data_lake
+from src.domain import events
 from src.domain.anomaly_detection import (
+    ANOMALY_DEVIATION_TO_SENSOR_EVENT_TYPE_MAPPING,
     AnomalyDetection,
     AnomalyDetectionUncommited,
 )
@@ -39,10 +41,22 @@ async def process():
         )
 
         # Update the data lake
-        data_lake.anomaly_detections_for_simulation.storage.append(
-            anomaly_detection
+        # ------------------------------------------------------------------
+        # Handle the event
+        current_event_type: events.sensors.EventType = (
+            ANOMALY_DEVIATION_TO_SENSOR_EVENT_TYPE_MAPPING[
+                anomaly_detection.value
+            ]
         )
-        data_lake.anomaly_detections_for_events.storage.append(
+        if event := await events.sensors.services.process(
+            sensor_id=anomaly_detection.time_series_data.sensor_id,
+            current_event_type=current_event_type,
+        ):
+            data_lake.events_by_sensor[
+                anomaly_detection.time_series_data.sensor_id
+            ].storage.append(event)
+
+        data_lake.anomaly_detections_for_simulation.storage.append(
             anomaly_detection
         )
         data_lake.anomaly_detections_by_sensor[tsd.sensor.id].storage.append(

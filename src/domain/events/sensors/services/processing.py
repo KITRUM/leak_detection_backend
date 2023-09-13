@@ -3,16 +3,12 @@ from contextlib import suppress
 from functools import partial
 from typing import Deque
 
-from src.domain.anomaly_detection import AnomalyDetection
-from src.domain.events.sensors import (
-    Event,
-    EventType,
-    EventUncommited,
-    services,
-)
-from src.domain.events.sensors.models import (
-    ANOMALY_DEVIATION_TO_EVENT_TYPE_MAPPING,
-)
+from loguru import logger
+
+from ..models import Event, EventType, EventUncommited
+from ..services import crud
+
+__all__ = ("process",)
 
 # TODO: Change the var-storage to the cache
 LAST_SENSORS_EVENTS_TYPES: dict[int, Deque[EventType]] = defaultdict(
@@ -20,18 +16,12 @@ LAST_SENSORS_EVENTS_TYPES: dict[int, Deque[EventType]] = defaultdict(
 )
 
 
-async def process(anomaly_detection: AnomalyDetection) -> Event | None:
+async def process(
+    sensor_id: int, current_event_type: EventType
+) -> Event | None:
     """This function represents the engine of producing events
     that are related to the specific sensor.
-
-    TBD. Currently, it is based on the anomaly detection results.
-        Might be that it should be changed to the Estimation results.
     """
-
-    sensor_id: int = anomaly_detection.time_series_data.sensor_id
-    current_event_type: EventType = ANOMALY_DEVIATION_TO_EVENT_TYPE_MAPPING[
-        anomaly_detection.value
-    ]
 
     with suppress(IndexError):
         if current_event_type == LAST_SENSORS_EVENTS_TYPES[sensor_id][-1]:
@@ -42,10 +32,12 @@ async def process(anomaly_detection: AnomalyDetection) -> Event | None:
         type=current_event_type, sensor_id=sensor_id
     )
 
-    event: Event = await services.create(create_schema)
+    event: Event = await crud.create(create_schema)
 
     # Update the last event type context with the new one
     # if a new one DOES NOT match it
     LAST_SENSORS_EVENTS_TYPES[event.sensor.id].append(event.type)
+
+    logger.info(f"New sensor event has been created: {event}")
 
     return event

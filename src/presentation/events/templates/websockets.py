@@ -5,9 +5,8 @@ from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
 from src.application.data_lake import data_lake
-from src.domain.events.templates import services as events_services
-from src.infrastructure.contracts import Response
-from src.infrastructure.contracts.response import ResponseMulti
+from src.domain.events.templates import services
+from src.infrastructure.contracts import Response, ResponseMulti
 from src.infrastructure.errors import NotFoundError
 
 from .contracts import EventPublic
@@ -34,7 +33,7 @@ async def sensor_events(ws: WebSocket, template_id: int):
                 template_id=instance.template.id,
             )
             for instance in (
-                await events_services.get_historical_data(template_id)
+                await services.crud.get_historical_data(template_id)
             )
         ]
 
