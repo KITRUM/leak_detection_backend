@@ -10,6 +10,7 @@ can be easily removed from sources.
 from src.domain.anomaly_detection import AnomalyDetectionRepository
 from src.domain.estimation import EstimationsSummariesRepository
 from src.domain.events.sensors import SensorsEventsRepository
+from src.domain.events.system import SystemEventsRepository
 from src.domain.simulation import SimulationDetectionRatesRepository
 from src.domain.tsd import TsdRepository
 from src.infrastructure.database import transaction
@@ -26,3 +27,4 @@ async def reset_the_database():
     await SimulationDetectionRatesRepository().delete_all()
     await EstimationsSummariesRepository().delete_all()
     await SensorsEventsRepository().delete_all()
+    await SystemEventsRepository().delete_all()
