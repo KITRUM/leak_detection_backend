@@ -95,6 +95,7 @@ app: FastAPI = factory.create(
         presentation.anomaly_detection.router,
         presentation.estimation.router,
         presentation.events.sensors.router,
+        presentation.events.system.router,
     ),
     startup_tasks=startup_tasks,
     startup_processes=(

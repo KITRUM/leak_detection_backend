@@ -41,8 +41,14 @@ async def process():
         )
 
         # Update the data lake
-        # ------------------------------------------------------------------
-        # Handle the event
+        data_lake.anomaly_detections_for_simulation.storage.append(
+            anomaly_detection
+        )
+        data_lake.anomaly_detections_by_sensor[tsd.sensor.id].storage.append(
+            anomaly_detection
+        )
+
+        # Handle the sensor event
         current_event_type: events.sensors.EventType = (
             ANOMALY_DEVIATION_TO_SENSOR_EVENT_TYPE_MAPPING[
                 anomaly_detection.value
@@ -55,10 +61,3 @@ async def process():
             data_lake.events_by_sensor[
                 anomaly_detection.time_series_data.sensor_id
             ].storage.append(event)
-
-        data_lake.anomaly_detections_for_simulation.storage.append(
-            anomaly_detection
-        )
-        data_lake.anomaly_detections_by_sensor[tsd.sensor.id].storage.append(
-            anomaly_detection
-        )
