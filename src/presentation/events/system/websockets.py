@@ -1,15 +1,12 @@
-from fastapi import APIRouter, WebSocket
+from fastapi import WebSocket
 from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
 from src.application.data_lake import data_lake
 from src.infrastructure.contracts import Response
 
+from .._router import router
 from .contracts import EventPublic
-
-__all__ = ("router",)
-
-router = APIRouter(prefix="/events")
 
 
 @router.websocket("/system")
