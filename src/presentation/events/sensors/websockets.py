@@ -1,6 +1,6 @@
 from contextlib import suppress
 
-from fastapi import APIRouter, WebSocket
+from fastapi import WebSocket
 from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
@@ -9,14 +9,11 @@ from src.domain.events.sensors import EventFlat, services
 from src.infrastructure.contracts import Response
 from src.infrastructure.errors import NotFoundError
 
+from .._router import router
 from .contracts import EventPublic
 
-__all__ = ("router",)
 
-router = APIRouter(prefix="/sensors")
-
-
-@router.websocket("/{sensor_id}/events")
+@router.websocket("/sensors/{sensor_id}")
 async def sensor_events(ws: WebSocket, sensor_id: int):
     await ws.accept()
     logger.success(

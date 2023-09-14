@@ -7,6 +7,9 @@ from src.infrastructure.errors.base import BaseError
 from ..models import Event, EventType, EventUncommited
 from . import crud
 
+__all__ = ("process",)
+
+
 TEMPLATES_CRITICAL_EVENT: dict[int, dict[int, bool | None]] = defaultdict(
     partial(defaultdict, lambda: None)  # type: ignore[arg-type]
 )

@@ -1,6 +1,6 @@
 from contextlib import suppress
 
-from fastapi import APIRouter, WebSocket
+from fastapi import WebSocket
 from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
@@ -9,14 +9,11 @@ from src.domain.events.templates import services
 from src.infrastructure.contracts import Response, ResponseMulti
 from src.infrastructure.errors import NotFoundError
 
+from .._router import router
 from .contracts import EventPublic
 
-__all__ = ("router",)
 
-router = APIRouter(prefix="/templates")
-
-
-@router.websocket("/{template_id}/events")
+@router.websocket("/templates/{template_id}")
 async def sensor_events(ws: WebSocket, template_id: int):
     await ws.accept()
     logger.success(
@@ -45,7 +42,7 @@ async def sensor_events(ws: WebSocket, template_id: int):
         )
         await ws.send_json(historical_response.encoded_dict())
 
-    # Run the infinite consuming of new template events 
+    # Run the infinite consuming of new template events
     async for instance in data_lake.events_by_template[template_id].consume():
         response = Response[EventPublic](
             result=EventPublic(
