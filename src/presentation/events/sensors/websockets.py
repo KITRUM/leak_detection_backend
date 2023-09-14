@@ -5,8 +5,7 @@ from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
 from src.application.data_lake import data_lake
-from src.domain.events.sensors import services
-from src.domain.events.sensors.models import EventFlat
+from src.domain.events.sensors import EventFlat, services
 from src.infrastructure.contracts import Response
 from src.infrastructure.errors import NotFoundError
 
@@ -36,7 +35,7 @@ async def sensor_events(ws: WebSocket, sensor_id: int):
         response = Response[EventPublic](result=event_public)
         await ws.send_json(response.encoded_dict())
 
-    # Run the infinite consuming of new anomaly detection data
+    # Run the infinite consuming of new sensor events
     async for instance in data_lake.events_by_sensor[sensor_id].consume():
         response = Response[EventPublic](
             result=EventPublic(
