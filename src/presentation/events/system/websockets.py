@@ -1,15 +1,18 @@
-from fastapi import WebSocket
+from fastapi import APIRouter, WebSocket
 from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
 from src.application.data_lake import data_lake
 from src.infrastructure.contracts import Response
 
-from .._router import router
 from .contracts import EventPublic
 
+__all__ = ("router",)
 
-@router.websocket("/system")
+router = APIRouter(prefix="/events/system")
+
+
+@router.websocket("")
 async def system_events(ws: WebSocket):
     await ws.accept()
     logger.success("Opening WS connection for system events fetching.")

@@ -25,7 +25,6 @@ __all__ = (
     "AnomalyDetectionsTable",
     "SimulationDetectionRatesTable",
     "EstimationsSummariesTable",
-    "TemplatesEventsTable",
     "SensorsEventsTable",
     "SystemEventsTable",
 )
@@ -99,7 +98,6 @@ class TemplatesTable(Base):
     platform_id: int = Column(Integer, nullable=False)  # type: ignore
 
     sensors = relationship("SensorsTable", back_populates="template")
-    events = relationship("TemplatesEventsTable", back_populates="template")
 
     def __str__(self) -> str:
         return str(self.name)
@@ -281,24 +279,6 @@ class EstimationsSummariesTable(Base):
         return str(self.result)
 
 
-class TemplatesEventsTable(Base):
-    __tablename__ = "templates_events"
-
-    type: str = Column(String, nullable=False)  # type: ignore[var-annotated]
-
-    template_id: int = Column(
-        ForeignKey(TemplatesTable.id),
-        nullable=False,
-    )  # type: ignore[var-annotated]
-
-    template = relationship(
-        "TemplatesTable", uselist=False, back_populates="events"
-    )
-
-    def __str__(self) -> str:
-        return str(self.type)
-
-
 class SensorsEventsTable(Base):
     __tablename__ = "sensors_events"
 
@@ -321,7 +301,10 @@ class SystemEventsTable(Base):
     __tablename__ = "system_events"
 
     type: str = Column(String, nullable=False)  # type: ignore[var-annotated]
-    message: str = Column(String, nullable=False)  # type: ignore[var-annotated]
+    message: str = Column(
+        String,
+        nullable=False,
+    )  # type: ignore[var-annotated]
 
     def __str__(self) -> str:
         return f"[{self.type}]: {self.message}"

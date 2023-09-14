@@ -3,14 +3,19 @@ The main purpose of this module is implementing separate
 processes interaction interface.
 """
 
-from multiprocessing import Process
+from threading import Thread
 from typing import Any, Callable
 
 from loguru import logger
 
 from src.infrastructure.errors import ProcessErorr
 
-_PROCESSES: dict[str, Process] = {}
+_PROCESSES: dict[str, Thread] = {}
+
+# WARNING: Processes are replaced with threads because of the
+#          problems with the shared memory between processes.
+
+# TODO: Get back to the processes after data lake is an external service
 
 
 def _build_key(namespace: str, key: Any) -> str:
@@ -19,7 +24,7 @@ def _build_key(namespace: str, key: Any) -> str:
     return f"{namespace}_{str(key)}"
 
 
-def get(namespace: str, key: Any) -> Process:
+def get(namespace: str, key: Any) -> Thread:
     """Get the process from the register if exist."""
 
     _key = _build_key(namespace, key)
@@ -32,13 +37,13 @@ def get(namespace: str, key: Any) -> Process:
 def cancel(namespace: str, key: Any) -> None:
     """Cancel the process base on the namespace and key."""
 
-    process: Process = get(namespace, key)
-    process.terminate()
+    # process: Process = get(namespace, key)
+    # process.terminate()
+    # _key = _build_key(namespace, key)
+    # del _PROCESSES[_key]
+    # logger.success(f"The process {_key} is terminated")
 
-    _key = _build_key(namespace, key)
-    del _PROCESSES[_key]
-
-    logger.success(f"The process {_key} is terminated")
+    raise NotImplementedError
 
 
 async def run(namespace: str, key: Any, callback: Callable):
@@ -47,9 +52,12 @@ async def run(namespace: str, key: Any, callback: Callable):
     if (_key := _build_key(namespace, key)) in _PROCESSES.keys():
         raise ProcessErorr(message=f"Process {_key} already exist")
 
-    process: Process = Process(target=callback, daemon=True)
-    process.start()
+    # process: Process = Process(target=callback, daemon=True)
+    # process.start()
 
-    _PROCESSES[_key] = process
+    thread = Thread(target=callback, daemon=True)
+    thread.start()
+
+    _PROCESSES[_key] = thread
 
     logger.debug(f"A new background process is added to the queue: {_key}")

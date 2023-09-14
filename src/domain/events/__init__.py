@@ -1,6 +1,6 @@
 """
 This package represents the domain representation that collects
-template and sensor events data structures and database interactions
+sensor events and system envents data structures and database interactions.
 """
 
-from . import sensors, system, templates  # noqa: F401
+from . import sensors, system  # noqa: F401

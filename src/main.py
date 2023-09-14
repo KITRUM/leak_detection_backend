@@ -78,6 +78,18 @@ startup_tasks.extend(
             key="processing",
             coro=application.estimation.process,
         ),
+        # partial(
+        #     tasks.run,
+        #     namespace="sensors",
+        #     key="select_best_initial_baseline",
+        #     coro=application.sensors.select_best_baseline,
+        # ),
+        # partial(
+        #     tasks.run,
+        #     namespace="sensors",
+        #     key="initial_baseline_augmentation",
+        #     coro=application.sensors.initial_baseline_augmentation,
+        # ),
     ]
 )
 
@@ -94,7 +106,8 @@ app: FastAPI = factory.create(
         presentation.tsd.router,
         presentation.anomaly_detection.router,
         presentation.estimation.router,
-        presentation.events.router,
+        presentation.events.sensors.router,
+        presentation.events.system.router,
     ),
     startup_tasks=startup_tasks,
     startup_processes=(

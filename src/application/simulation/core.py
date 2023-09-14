@@ -9,6 +9,7 @@ from numpy.typing import NDArray
 
 from src.application.data_lake import data_lake
 from src.config import settings
+from src.domain.anomaly_detection.models import AnomalyDetection
 from src.domain.currents import Current
 from src.domain.currents import services as currents_services
 from src.domain.sensors import Sensor, SensorsRepository
@@ -21,8 +22,10 @@ from src.domain.simulation import (
     SimulationDetectionRateUncommited,
 )
 from src.domain.simulation import services as simulation_services
+from src.domain.simulation.repository import SimulationDetectionRatesRepository
 from src.domain.waves import Wave
 from src.domain.waves import services as waves_services
+from src.infrastructure.database import transaction
 from src.infrastructure.errors import UnprocessableError
 from src.infrastructure.physics import constants
 
@@ -161,57 +164,70 @@ async def process():
     data_lake_items = data_lake.anomaly_detections_for_simulation
     async for anomaly_detection in data_lake_items.consume():
         logger.debug(f"Simulation processing for {anomaly_detection.id}")
-        sensor: Sensor = await SensorsRepository().get(
-            anomaly_detection.time_series_data.sensor_id
+
+        detection_rates: list[SimulationDetectionRateFlat] = await _process(
+            anomaly_detection=anomaly_detection,
+            currents_dataset=currents_dataset,
+            waves_dataset=waves_dataset,
+            leakages_dataset=leakages_dataset,
         )
-
-        detections: list[Detection] = [
-            get_detection(
-                sensor=sensor,
-                leakage=leakage,
-                currents=currents_dataset,
-                waves=waves_dataset,
-            )
-            for leakage in leakages_dataset
-        ]
-
-        # ------------------------------------------------
-        # ========== Detection rates processing ==========
-        # ------------------------------------------------
-        simulation_detection_rates: list[SimulationDetectionRateFlat] = []
-        for detection in detections:
-            above_limit = np.zeros(detection.concentrations.shape)
-            above_limit[
-                np.where(
-                    detection.concentrations
-                    > settings.simulation.parameters.detection_limit
-                )
-            ] = 1
-
-            schema = SimulationDetectionRateUncommited(
-                anomaly_detection_id=anomaly_detection.id,
-                concentrations=",".join(
-                    str(el) for el in detection.concentrations
-                ),
-                leakage=detection.leakage.flat_dict(),
-                rate=float(np.sum(above_limit) / np.size(above_limit)),
-            )
-
-            # TODO: change to batch save all detections
-            instance: SimulationDetectionRateFlat = (
-                await (
-                    simulation_services.save_simulation_detection_rate(schema)
-                )
-            )
-
-            simulation_detection_rates.append(instance)
-
         # Update the data lake
         # WARNING: The object that stores into the data lake
         #          has the next amount of concentrations:
         #          total_concentrations = sum(leaks) * sum(currents)
         #          It might be a good idea to store the whole data into the
         #          database and save ids into the data lake.
-        data_lake.simulation_detection_rates.storage.append(
-            simulation_detection_rates
+        data_lake.simulation_detection_rates.storage.append(detection_rates)
+
+
+@transaction
+async def _process(
+    anomaly_detection: AnomalyDetection,
+    currents_dataset: list[Current],
+    waves_dataset: list[Wave],
+    leakages_dataset: list[Leakage],
+):
+    sensor: Sensor = await SensorsRepository().get(
+        anomaly_detection.time_series_data.sensor_id
+    )
+
+    detections: list[Detection] = [
+        get_detection(
+            sensor=sensor,
+            leakage=leakage,
+            currents=currents_dataset,
+            waves=waves_dataset,
         )
+        for leakage in leakages_dataset
+    ]
+
+    # ------------------------------------------------
+    # ========== Detection rates processing ==========
+    # ------------------------------------------------
+    simulation_detection_rates: list[SimulationDetectionRateFlat] = []
+    for detection in detections:
+        above_limit = np.zeros(detection.concentrations.shape)
+        above_limit[
+            np.where(
+                detection.concentrations
+                > settings.simulation.parameters.detection_limit
+            )
+        ] = 1
+
+        schema = SimulationDetectionRateUncommited(
+            anomaly_detection_id=anomaly_detection.id,
+            concentrations=",".join(
+                str(el) for el in detection.concentrations
+            ),
+            leakage=detection.leakage.flat_dict(),
+            rate=float(np.sum(above_limit) / np.size(above_limit)),
+        )
+
+        # PERF: change to batch save all detections
+        instance: SimulationDetectionRateFlat = (
+            await SimulationDetectionRatesRepository().create(schema)
+        )
+
+        simulation_detection_rates.append(instance)
+
+    return simulation_detection_rates

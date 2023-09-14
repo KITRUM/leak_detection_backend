@@ -1,19 +1,23 @@
 from contextlib import suppress
 
-from fastapi import WebSocket
+from fastapi import APIRouter, WebSocket
 from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
+from src.application import events
 from src.application.data_lake import data_lake
-from src.domain.events.sensors import EventFlat, services
+from src.domain.events.sensors import EventFlat
 from src.infrastructure.contracts import Response
 from src.infrastructure.errors import NotFoundError
 
-from .._router import router
 from .contracts import EventPublic
 
+__all__ = ("router",)
 
-@router.websocket("/sensors/{sensor_id}")
+router = APIRouter(prefix="/events/sensors")
+
+
+@router.websocket("/{sensor_id}")
 async def sensor_events(ws: WebSocket, sensor_id: int):
     await ws.accept()
     logger.success(
@@ -23,7 +27,7 @@ async def sensor_events(ws: WebSocket, sensor_id: int):
 
     # Just skip if there is no historical data in the database
     with suppress(NotFoundError):
-        event_flat: EventFlat = await services.crud.get_last(sensor_id)
+        event_flat: EventFlat = await events.sensors.get_last(sensor_id)
         event_public = EventPublic(
             id=event_flat.id,
             type=event_flat.type,
