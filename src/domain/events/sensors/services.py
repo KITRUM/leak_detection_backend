@@ -5,8 +5,7 @@ from typing import Deque
 
 from loguru import logger
 
-from ..models import Event, EventType, EventUncommited
-from ..services import crud
+from .models import EventType, EventUncommited
 
 __all__ = ("process",)
 
@@ -18,7 +17,7 @@ LAST_SENSORS_EVENTS_TYPES: dict[int, Deque[EventType]] = defaultdict(
 
 async def process(
     sensor_id: int, current_event_type: EventType
-) -> Event | None:
+) -> EventUncommited | None:
     """This function represents the engine of producing events
     that are related to the specific sensor.
     """
@@ -27,17 +26,14 @@ async def process(
         if current_event_type == LAST_SENSORS_EVENTS_TYPES[sensor_id][-1]:
             return None
 
-    # Build the event base on the anomaly deviation
     create_schema: EventUncommited = EventUncommited(
         type=current_event_type, sensor_id=sensor_id
     )
 
-    event: Event = await crud.create(create_schema)
-
     # Update the last event type context with the new one
     # if a new one DOES NOT match it
-    LAST_SENSORS_EVENTS_TYPES[event.sensor.id].append(event.type)
+    LAST_SENSORS_EVENTS_TYPES[sensor_id].append(current_event_type)
 
-    logger.info(f"New sensor event has been created: {event}")
+    logger.info(f"Sensor[{sensor_id}] event is handled: {current_event_type}")
 
-    return event
+    return create_schema

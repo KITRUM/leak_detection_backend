@@ -24,17 +24,21 @@ This package includes baselines-related components:
 import asyncio
 import pickle
 from collections import defaultdict
+from contextlib import suppress
 from time import sleep
-from typing import Coroutine
+from typing import Any, AsyncGenerator, Coroutine
 
 import numpy as np
 from loguru import logger
 from numpy.typing import NDArray
 from stumpy import aampi
 
+from src.application.data_lake import data_lake
 from src.config import settings
 from src.domain.anomaly_detection import SeedBaseline
-from src.domain.anomaly_detection import services as anomaly_detection_services
+from src.domain.anomaly_detection import services as services
+from src.domain.events import system
+from src.domain.events.system.repository import SystemEventsRepository
 from src.domain.sensors import (
     Sensor,
     SensorBase,
@@ -43,10 +47,14 @@ from src.domain.sensors import (
     SensorCreateSchema,
     SensorsConfigurationsRepository,
     SensorsRepository,
+    SensorUncommited,
 )
-from src.domain.sensors import services as sensors_services
+from src.domain.sensors.models import (
+    SensorConfigurationFlat,
+    SensorUpdatePartialSchema,
+)
 from src.domain.tsd import TsdFlat
-from src.domain.tsd import services as tsd_services
+from src.domain.tsd.repository import TsdRepository
 from src.infrastructure.database import transaction
 from src.infrastructure.errors import NotFoundError, UnprocessableError
 
@@ -66,6 +74,53 @@ WINDOW_SIZE: int = settings.anomaly_detection.window_size
 # ********** CRUD operations **********
 # ************************************************
 @transaction
+async def by_template(template_id: int) -> list[Sensor]:
+    """Get all sensors by template id."""
+
+    return [
+        instance
+        async for instance in SensorsRepository().by_template(template_id)
+    ]
+
+
+@transaction
+async def by_pinned(value: bool) -> list[Sensor]:
+    """Get all sensors by pinned state."""
+
+    return [
+        instance async for instance in SensorsRepository().filter(pinned=value)
+    ]
+
+
+@transaction
+async def retrieve(sensor_id: int) -> Sensor:
+    """Retrieve the sensor by id."""
+
+    return await SensorsRepository().get(id_=sensor_id)
+
+
+@transaction
+async def update(
+    sensor_id: int,
+    schema: SensorUpdatePartialSchema = (SensorUpdatePartialSchema()),
+) -> Sensor:
+    """Update the sensor and the configuration in one transaction hop."""
+
+    # PERF: Abusing the database. (not critical for now)
+
+    sensor_repository = SensorsRepository()
+
+    # TODO: Replace with .exists() method
+    sensor: Sensor = await sensor_repository.get(id_=sensor_id)
+
+    # Update the sensor's payload if defined
+    with suppress(UnprocessableError):
+        await sensor_repository.update_partially(id_=sensor.id, schema=schema)
+
+    return await sensor_repository.get(id_=sensor_id)
+
+
+@transaction
 async def create(template_id: int, sensor_payload: SensorBase) -> Sensor:
     """This function takes care about the sensor creation.
     The sensor creation consist of:
@@ -76,7 +131,7 @@ async def create(template_id: int, sensor_payload: SensorBase) -> Sensor:
     """
 
     anomaly_detection_initial_baseline: aampi = (
-        anomaly_detection_services.baselines.seed.by_level(level="high")
+        services.baselines.seed.by_level(level="high")
     )
 
     initial_baseline_flat: bytes = pickle.dumps(
@@ -92,7 +147,26 @@ async def create(template_id: int, sensor_payload: SensorBase) -> Sensor:
         sensor_payload=sensor_payload,
     )
 
-    return await sensors_services.crud.create(create_schema)
+    sensors_repository = SensorsRepository()
+    configurations_repository = SensorsConfigurationsRepository()
+
+    configuration: SensorConfigurationFlat = (
+        await configurations_repository.create(
+            create_schema.configuration_uncommited
+        )
+    )
+
+    _sensor_uncommited_payload: dict[
+        str, Any
+    ] = create_schema.sensor_payload.dict() | {
+        "template_id": create_schema.template_id,
+        "configuration_id": configuration.id,
+    }
+    sensor: Sensor = await sensors_repository.create(
+        SensorUncommited(**_sensor_uncommited_payload)
+    )
+
+    return sensor
 
 
 @transaction
@@ -173,6 +247,15 @@ async def toggle_pin(sensor_id: int) -> Sensor:
     return await sensor_repository.get(id_=sensor_id)
 
 
+async def create_system_event(schema: system.EventUncommited) -> system.Event:
+    """This function takes care about the system event creation."""
+
+    event: system.Event = await system.SystemEventsRepository().create(schema)
+    data_lake.events_system.storage.append(event)
+
+    return event
+
+
 # ************************************************
 # ********** Backgorund processes  **********
 # ************************************************
@@ -199,6 +282,7 @@ def select_best_baseline():
             settings.sensors.anomaly_detection.baseline_best_selection_interval.total_seconds()  # noqa: E501
         )
         asyncio.run(_select_best_baseline())
+        # await _select_best_baseline()
 
 
 @transaction
@@ -207,35 +291,52 @@ async def _select_best_baseline():
 
     seed_baselines: list[
         SeedBaseline
-    ] = anomaly_detection_services.baselines.seed.for_select_best()
+    ] = services.baselines.seed.for_select_best()
 
     # Select the best baseline for each sensor and update it in the database
     # if seed baseline feets the needs
     async for sensor in SensorsRepository().filter():
         logger.info(f"Best baseline seelction for {sensor.name}...")
+        error_message = (
+            "The initial baseline selection is possible "
+            "only in case time series data exists in the database. "
+            f"Sensor: {sensor.name}"
+        )
 
         try:
-            tsd_set: list[TsdFlat] = await tsd_services.get_last_set_from(
+            tsd_set: AsyncGenerator[TsdFlat, None] = TsdRepository().filter(
                 sensor_id=sensor.id,
-                timestamp=sensor.configuration.last_baseline_selection_timestamp,
+                timestamp_from=sensor.configuration.last_baseline_selection_timestamp,
+                order_by_desc=True,
             )
         except NotFoundError:
-            raise UnprocessableError(
-                message=(
-                    "The initial baseline augmentation is possible "
-                    "only in case time series data exists in the database. "
-                    f"Sensor: {sensor.name}"
+            logger.error(error_message)
+
+            await create_system_event(
+                system.EventUncommited(
+                    type=system.EventType.ALERT_CRITICAL, message=error_message
                 )
             )
 
-        cleaned_concentrations: NDArray[
-            np.float64
-        ] = await anomaly_detection_services.baselines.clean_concentrations(
-            concentrations=np.array([tsd.ppmv for tsd in tsd_set])
-        )
+            continue
+
+        try:
+            cleaned_concentrations: NDArray[
+                np.float64
+            ] = await services.baselines.clean_concentrations(
+                concentrations=np.array([tsd.ppmv async for tsd in tsd_set])
+            )
+        except UnprocessableError:
+            await create_system_event(
+                system.EventUncommited(
+                    type=system.EventType.ALERT_CRITICAL, message=error_message
+                )
+            )
+
+            continue
 
         if best_baseline := (
-            await anomaly_detection_services.baselines.select_best_baseline(
+            await services.baselines.select_best_baseline(
                 seed_baselines=seed_baselines,
                 cleaned_concentrations=cleaned_concentrations,
             )
@@ -253,6 +354,27 @@ async def _select_best_baseline():
                         best_baseline
                     )
                 ),
+            )
+
+            await create_system_event(
+                system.EventUncommited(
+                    type=system.EventType.ALERT_SUCCESS,
+                    message=(
+                        "A new initial baseline is selected "
+                        f"for the sensor: {sensor.name}."
+                    ),
+                )
+            )
+        else:
+            message = (
+                "A new initial baseline is not changed after the selection"
+            )
+            logger.info(message)
+
+            await create_system_event(
+                system.EventUncommited(
+                    type=system.EventType.INFO, message=message
+                )
             )
 
 
@@ -276,35 +398,48 @@ def initial_baseline_augmentation():
             settings.sensors.anomaly_detection.baseline_augmentation_interval.total_seconds()  # noqa: E501
         )
         asyncio.run(_initial_baseline_augmentation())
+        # await _initial_baseline_augmentation()
 
 
 @transaction
 async def _initial_baseline_augmentation():
     # TODO: Add other pre-feature validations
 
-    baselines_services = anomaly_detection_services.baselines  # alias
+    baselines_services = services.baselines  # alias
 
     # Make the augmentation for each sensor and update it in the database
     async for sensor in SensorsRepository().filter():
         logger.info(f"Inital baseline augmentation for {sensor.name}...")
 
         try:
-            tsd_set: list[TsdFlat] = await tsd_services.get_last_set_from(
-                sensor_id=sensor.id, timestamp=None
+            tsd_set: AsyncGenerator[TsdFlat, None] = TsdRepository().filter(
+                sensor_id=sensor.id, timestamp_from=None, order_by_desc=True
             )
         except NotFoundError:
-            raise UnprocessableError(
-                message=(
-                    "The initial baseline augmentation is possible "
-                    "only in case time series data exists in the database. "
-                    f"Sensor: {sensor.name}"
+            message = (
+                "The initial baseline augmentation is possible "
+                "only in case time series data exists in the database. "
+                f"Sensor: {sensor.name}"
+            )
+
+            logger.error(message)
+
+            # Create the system event if augmentation is not possible
+            system_event: system.Event = await SystemEventsRepository().create(
+                schema=system.EventUncommited(
+                    type=system.EventType.ALERT_CRITICAL, message=message
                 )
             )
+
+            # Update the data lake
+            data_lake.events_system.storage.append(system_event)
+
+            return
 
         cleaned_concentrations: NDArray[
             np.float64
         ] = await baselines_services.clean_concentrations(
-            concentrations=np.array([tsd.ppmv for tsd in tsd_set])
+            concentrations=np.array([tsd.ppmv async for tsd in tsd_set])
         )
 
         # Get the updated initial baseline after the augmentation

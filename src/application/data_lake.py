@@ -19,7 +19,7 @@ from typing import AsyncGenerator, Deque, Generic, TypeVar
 from src.config import settings
 from src.domain.anomaly_detection import AnomalyDetection
 from src.domain.estimation import EstimationSummary
-from src.domain.events import sensors, system, templates
+from src.domain.events import sensors, system
 from src.domain.simulation import SimulationDetectionRateFlat
 from src.domain.tsd import Tsd
 
@@ -81,9 +81,6 @@ class DataLake:
     # Events [sensors]
     events_by_sensor: dict[int, LakeItem[sensors.Event]]
 
-    # Events [templates]
-    events_by_template: dict[int, LakeItem[templates.Event]]
-
     # Events [system]
     events_system: LakeItem[system.Event]
 
@@ -106,10 +103,6 @@ data_lake = DataLake(
     ),
     # Events [sensors]
     events_by_sensor=defaultdict(partial(LakeItem[sensors.Event], limit=1)),
-    # Events [templates]
-    events_by_template=defaultdict(
-        partial(LakeItem[templates.Event], limit=1)
-    ),
     # Events [system]
     events_system=LakeItem[system.Event](limit=20),
 )

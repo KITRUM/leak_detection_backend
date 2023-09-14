@@ -15,8 +15,6 @@ class SensorsEventsRepository(BaseRepository[SensorsEventsTable]):
     schema_class = SensorsEventsTable
 
     async def get(self, id_: int) -> Event:
-        """Fetch the instance by id."""
-
         query: Select = (
             select(self.schema_class)
             .where(getattr(self.schema_class, "id") == id_)
@@ -38,16 +36,18 @@ class SensorsEventsRepository(BaseRepository[SensorsEventsTable]):
 
         return EventFlat.from_orm(_schema)
 
-    async def by_sensor(self, sensor_id: int) -> AsyncGenerator[Event, None]:
-        """Fetch all anomaly detections for the sensor."""
-
-        query: Select = (
-            select(self.schema_class)
-            .options(
-                joinedload(self.schema_class.sensor),
-            )
-            .where(getattr(self.schema_class, "sensor_id") == sensor_id)
+    async def filter(
+        self, sensor_id: int | None = None
+    ) -> AsyncGenerator[Event, None]:
+        query: Select = select(self.schema_class).options(
+            joinedload(self.schema_class.sensor),
         )
+
+        # Filter by sensor_id
+        if sensor_id is not None:
+            query = query.where(
+                getattr(self.schema_class, "sensor_id") == sensor_id
+            )
 
         result: Result = await self._session.execute(query)
 

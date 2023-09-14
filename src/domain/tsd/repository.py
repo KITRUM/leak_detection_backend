@@ -4,7 +4,6 @@ from typing import AsyncGenerator
 from sqlalchemy import Result, Select, asc, desc, select
 from sqlalchemy.orm import joinedload
 
-from src.domain.tsd.models import Tsd, TsdFlat, TsdUncommited
 from src.infrastructure.database import (
     BaseRepository,
     SensorsTable,
@@ -12,7 +11,9 @@ from src.infrastructure.database import (
 )
 from src.infrastructure.errors import NotFoundError
 
-all = ("SensorsRepository",)
+from .models import Tsd, TsdFlat, TsdUncommited
+
+all = ("TsdRepository",)
 
 
 class TsdRepository(BaseRepository[TimeSeriesDataTable]):
@@ -47,9 +48,9 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
 
         return TsdFlat.from_orm(_schema)
 
-    async def by_sensor(
+    async def filter(
         self,
-        sensor_id: int,
+        sensor_id: int | None = None,
         last_id: int | None = None,
         limit: int | None = None,
         timestamp_from: datetime | None = None,
@@ -57,6 +58,8 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
     ) -> AsyncGenerator[TsdFlat, None]:
         """Fetch all time series data by sensor from database.
         The sensor table is joined.
+
+        sensor_id: int | None -- determines the sensor id
 
         limit: int | None -- determines the max limit of results
 
@@ -70,9 +73,12 @@ class TsdRepository(BaseRepository[TimeSeriesDataTable]):
                  is used by default.
         """
 
-        query: Select = select(self.schema_class).where(
-            getattr(self.schema_class, "sensor_id") == sensor_id
-        )
+        query: Select = select(self.schema_class)
+
+        if sensor_id is not None:
+            query = query.where(
+                getattr(self.schema_class, "sensor_id") == sensor_id
+            )
 
         if order_by_desc:
             query = query.order_by(desc(self.schema_class.id))

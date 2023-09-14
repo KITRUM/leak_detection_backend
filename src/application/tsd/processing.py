@@ -1,22 +1,63 @@
 """
-This modules collects the time series data processing services.
 The general purpose: fetch the data from the external source and parse it
 using the specific platform parser.
+
+Also, crud operations for the time series data are implemented here.
 """
 
 from functools import partial
 
+import numpy as np
+
 from src.application.data_lake import data_lake
 from src.config import settings
 from src.domain.sensors import Sensor, SensorsRepository
-from src.domain.tsd import Tsd, TsdRaw, services
+from src.domain.tsd import Tsd, TsdFlat, TsdRaw, TsdRepository, TsdUncommited
 from src.infrastructure.application import tasks
+from src.infrastructure.database import transaction
 
 from ..tsd import mock
 
-__all__ = ("process", "create_tasks_for_existed_sensors_process")
+__all__ = (
+    "process",
+    "create_tasks_for_existed_sensors_process",
+    "get_historical_data",
+    "get_by_id",
+    "create",
+)
 
 
+# ************************************************
+# ********** CRUD operations **********
+# ************************************************
+@transaction
+async def create(tsd_raw: TsdRaw, sensor_id: int) -> Tsd:
+    repository = TsdRepository()
+    tsd: TsdFlat = await repository.create(
+        TsdUncommited(
+            ppmv=np.float64(tsd_raw.ppmv),
+            timestamp=tsd_raw.timestamp,
+            sensor_id=sensor_id,
+        )
+    )
+    return await repository.get(tsd.id)
+
+
+@transaction
+async def get_by_id(id_: int) -> Tsd:
+    return await TsdRepository().get(id_=id_)
+
+
+@transaction
+async def get_historical_data(sensor_id: int) -> list[TsdFlat]:
+    """Get the historical data."""
+
+    return [tsd async for tsd in TsdRepository().filter(sensor_id)]
+
+
+# ************************************************
+# ********** Processing **********
+# ************************************************
 async def _mock_process_time_series_data(sensor):
     """The mock implementation of time series data
     pre processing using CSV files.
@@ -38,7 +79,7 @@ async def _mock_process_time_series_data(sensor):
         if tsd_raw.ppmv > 10000:
             continue
 
-        tsd: Tsd = await services.save_tsd(tsd_raw, sensor.id)
+        tsd: Tsd = await create(tsd_raw, sensor.id)
 
         # Update the data lake for background processing
         data_lake.time_series_data.storage.append(tsd)
