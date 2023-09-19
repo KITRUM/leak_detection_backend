@@ -1,5 +1,5 @@
 """
-This package includes platforms services, constants and data models.
+This package includes fields services, constants and data models.
 """
 
 from .constants import *  # noqa: F401, F403

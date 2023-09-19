@@ -5,7 +5,7 @@ called `ANOMALY DETECTION`.
 
 It depends on:
     - the time series data that is fetched from the external source,
-    - platforms
+    - fields
     - anomaly deviation calculation logic
 """
 

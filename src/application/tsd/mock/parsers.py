@@ -2,14 +2,14 @@ from typing import Callable
 
 from dateutil.parser import parse as datetime_parser
 
-from src.domain.platforms import Platform
+from src.domain.fields import Field
 from src.domain.tsd import TsdRaw
 from src.infrastructure.errors.base import NotFoundError
 
-__all__ = ("PlatformParserCallback", "get_parser")
+__all__ = ("FieldParserCallback", "get_parser")
 
 
-PlatformParserCallback = Callable[[list[str]], TsdRaw]
+FieldParserCallback = Callable[[list[str]], TsdRaw]
 
 
 def trestakk_parser(raw_data: list[str]) -> TsdRaw:
@@ -44,15 +44,13 @@ def snorre_parser(raw_data: list[str]) -> TsdRaw:
     )
 
 
-def get_parser(platform_id: int) -> PlatformParserCallback:
-    """Get the parser by platform id."""
+def get_parser(field_id: int) -> FieldParserCallback:
+    """Get the parser by field id."""
 
-    match Platform.get_by_id(platform_id):
-        case Platform.TRESTAKK:
+    match Field.get_by_id(field_id):
+        case Field.TRESTAKK:
             return trestakk_parser
-        case Platform.SNORRE:
+        case Field.SNORRE:
             return snorre_parser
         case _:
-            raise NotFoundError(
-                message=f"Unknown platform parser: {platform_id}"
-            )
+            raise NotFoundError(message=f"Unknown field parser: {field_id}")

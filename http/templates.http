@@ -1,5 +1,5 @@
 ### Create a new template
-POST {{HTTP__BASE_URL}}/platforms/1/templates
+POST {{HTTP__BASE_URL}}/fields/1/templates
 Content-Type: application/json
 
 {
@@ -9,7 +9,7 @@ Content-Type: application/json
 
 
 ### Get the list of all templates
-GET {{HTTP__BASE_URL}}/platforms/1/templates
+GET {{HTTP__BASE_URL}}/fields/1/templates
 
 
 ### Retrieve the template

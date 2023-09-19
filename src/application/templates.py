@@ -6,7 +6,7 @@ from src.domain.templates import (
 )
 from src.infrastructure.database import transaction
 
-__all__ = ("get_by_id", "update", "create", "retrieve_by_platform_id")
+__all__ = ("get_by_id", "update", "create", "retrieve_by_field_id")
 
 
 @transaction
@@ -32,10 +32,9 @@ async def create(schema: TemplateUncommited) -> Template:
 
 
 @transaction
-async def retrieve_by_platform_id(platform_id: int) -> list[Template]:
-    """Retrieve the template by platform id."""
+async def retrieve_by_field_id(field_id: int) -> list[Template]:
+    """Retrieve the template by field id."""
 
     return [
-        template
-        async for template in TemplatesRepository().by_platform(platform_id)
+        template async for template in TemplatesRepository().by_field(field_id)
     ]

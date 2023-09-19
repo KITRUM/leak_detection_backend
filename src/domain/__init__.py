@@ -3,7 +3,7 @@ from . import (  # noqa: F401
     currents,
     estimation,
     events,
-    platforms,
+    fields,
     sensors,
     simulation,
     templates,

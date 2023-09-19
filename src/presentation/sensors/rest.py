@@ -25,7 +25,7 @@ router = APIRouter(prefix="", tags=["Sensors"])
 async def sensor_create(
     _: Request, template_id: int, schema: SensorCreateRequestBody
 ) -> Response[SensorPublic]:
-    """Return the list of platforms that are provided."""
+    """Create the sensor within the template."""
 
     sensor: Sensor = await sensors.create(
         template_id=template_id, sensor_payload=SensorBase.from_orm(schema)
