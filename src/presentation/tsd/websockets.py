@@ -2,8 +2,8 @@ from fastapi import APIRouter, WebSocket
 from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
+from src.application import tsd
 from src.application.data_lake import data_lake
-from src.domain.tsd import services as tsd_services
 from src.infrastructure.contracts import Response, ResponseMulti
 
 from .contracts import TsdPublic
@@ -30,7 +30,7 @@ async def time_series_data(ws: WebSocket, sensor_id: int):
 
     historical_tsd_set: list[TsdPublic] = [
         TsdPublic.from_orm(instance)
-        for instance in (await tsd_services.get_historical_data(sensor_id))
+        for instance in (await tsd.get_historical_data(sensor_id))
     ]
 
     # WARNING: The historical data should be sent by chanks since
@@ -38,8 +38,10 @@ async def time_series_data(ws: WebSocket, sensor_id: int):
     historical_response = ResponseMulti[TsdPublic](result=historical_tsd_set)
     await ws.send_json(historical_response.encoded_dict())
 
-    async for tsd in data_lake.time_series_data_by_sensor[sensor_id].consume():
-        response = Response[TsdPublic](result=TsdPublic.from_orm(tsd))
+    async for instance in data_lake.time_series_data_by_sensor[
+        sensor_id
+    ].consume():
+        response = Response[TsdPublic](result=TsdPublic.from_orm(instance))
 
         try:
             await ws.send_json(response.encoded_dict())

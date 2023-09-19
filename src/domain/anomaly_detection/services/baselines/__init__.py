@@ -4,6 +4,6 @@ with baselines for anomaly detection feature.
 """
 
 from . import seed  # noqa: F401
+from .augmentation import *  # noqa: F401, F403
 from .operations import *  # noqa: F401, F403
-from .revision import *  # noqa: F401, F403
 from .select_best import *  # noqa: F401, F403

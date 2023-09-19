@@ -1,19 +1,11 @@
 from functools import partial
-from typing import AsyncGenerator
 
 from fastapi import APIRouter, Request
 
 from src.application import sensors, tsd
-from src.domain.sensors import (
-    Sensor,
-    SensorBase,
-    SensorsRepository,
-    SensorUpdatePartialSchema,
-    services,
-)
+from src.domain.sensors import Sensor, SensorBase, SensorUpdatePartialSchema
 from src.infrastructure.application import tasks
 from src.infrastructure.contracts import Response, ResponseMulti
-from src.infrastructure.database import transaction
 
 from .contracts import (
     SensorCreateRequestBody,
@@ -33,7 +25,7 @@ router = APIRouter(prefix="", tags=["Sensors"])
 async def sensor_create(
     _: Request, template_id: int, schema: SensorCreateRequestBody
 ) -> Response[SensorPublic]:
-    """Return the list of platforms that are provided."""
+    """Create the sensor within the template."""
 
     sensor: Sensor = await sensors.create(
         template_id=template_id, sensor_payload=SensorBase.from_orm(schema)
@@ -50,24 +42,22 @@ async def sensor_create(
 
 
 @router.get("/templates/{template_id}/sensors")
-@transaction
 async def template_sensors_list(
     _: Request, template_id: int
 ) -> ResponseMulti[SensorPublic]:
     """Return the list sensor for the specific template."""
 
-    sensors: AsyncGenerator[Sensor, None] = SensorsRepository().by_template(
+    sensors_internal: list[Sensor] = await sensors.by_template(
         template_id=template_id
     )
     sensors_public = [
-        SensorPublic.from_orm(sensor) async for sensor in sensors
+        SensorPublic.from_orm(sensor) for sensor in sensors_internal
     ]
 
     return ResponseMulti[SensorPublic](result=sensors_public)
 
 
 @router.get("/sensors")
-@transaction
 async def sensors_filter(
     _: Request, pinned: bool = False
 ) -> ResponseMulti[SensorPublic]:
@@ -76,37 +66,33 @@ async def sensors_filter(
     pinned -- the filter that goes through sensor configuration.
     """
 
-    sensors: AsyncGenerator[Sensor, None] = SensorsRepository().filter(
-        pinned=pinned
-    )
+    sensors_internal: list[Sensor] = await sensors.by_pinned(value=pinned)
     sensors_public = [
-        SensorPublic.from_orm(sensor) async for sensor in sensors
+        SensorPublic.from_orm(sensor) for sensor in sensors_internal
     ]
 
     return ResponseMulti[SensorPublic](result=sensors_public)
 
 
 @router.get("/sensors/{sensor_id}")
-@transaction
 async def sensor_retrieve(_: Request, sensor_id: int):
     """Return the list of sensors within the sensor."""
 
-    sensor: Sensor = await SensorsRepository().get(sensor_id)
+    sensor: Sensor = await sensors.retrieve(sensor_id=sensor_id)
     sensor_public = SensorPublic.from_orm(sensor)
 
     return Response[SensorPublic](result=sensor_public)
 
 
 @router.patch("/sensors/{sensor_id}")
-@transaction
 async def sensor_update(
     _: Request, sensor_id: int, schema: SensorUpdateRequestBody
 ) -> Response[SensorPublic]:
     """Partially update the sensor."""
 
-    sensor: Sensor = await services.crud.update(
+    sensor: Sensor = await sensors.update(
         sensor_id=sensor_id,
-        sensor_update_schema=SensorUpdatePartialSchema.from_orm(schema),
+        schema=SensorUpdatePartialSchema.from_orm(schema),
     )
 
     return Response[SensorPublic](result=SensorPublic.from_orm(sensor))

@@ -4,9 +4,9 @@ from fastapi import APIRouter, WebSocket
 from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
+from src.application import estimation
 from src.application.data_lake import data_lake
 from src.config import settings
-from src.domain.estimation import services as estimation_services
 from src.infrastructure.contracts import Response, ResponseMulti
 from src.infrastructure.errors.base import NotFoundError, UnprocessableError
 
@@ -48,9 +48,7 @@ async def estimation_summary(ws: WebSocket, sensor_id: int):
     with suppress(NotFoundError):
         historical_data: list[EstimationSummaryPublic] = [
             EstimationSummaryPublic.from_orm(instance)
-            for instance in (
-                await estimation_services.get_historical_data(sensor_id)
-            )
+            for instance in (await estimation.get_historical_data(sensor_id))
         ]
 
         # WARNING: The historical data should be sent by chanks since

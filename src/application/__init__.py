@@ -4,5 +4,6 @@ from . import (  # noqa: F401
     events,
     sensors,
     simulation,
+    templates,
     tsd,
 )

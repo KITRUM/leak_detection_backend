@@ -48,9 +48,7 @@ class TemplateCreateRequestBody(PublicModel):
     length: float | None = None
     width: float | None = None
 
-    def build_template_uncommited(
-        self, platform_id: int
-    ) -> TemplateUncommited:
+    def build_template_uncommited(self, field_id: int) -> TemplateUncommited:
         """Build TemplateUncommited internal instance."""
 
         currents_path = (
@@ -73,7 +71,7 @@ class TemplateCreateRequestBody(PublicModel):
             "currents_path": currents_path,
             "waves_path": waves_path,
             "simulated_leaks_path": simulated_leaks_path,
-            "platform_id": platform_id,
+            "field_id": field_id,
             "angle_from_north": np.float64(self.angle_from_north),
             "height": np.float64(self.height) if self.height else None,
             "internal_volume": np.float64(self.internal_volume)
@@ -144,4 +142,4 @@ class TemplatePublic(PublicModel):
     length: np.float64 | None = None
     width: np.float64 | None = None
 
-    platform_id: int
+    field_id: int

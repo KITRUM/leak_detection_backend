@@ -3,12 +3,30 @@ from enum import StrEnum
 import numpy as np
 from numpy.typing import NDArray
 
-__all__ = ("ANOMALY_DETECTION_MATRIX_PROFILE_ERROR_MESSAGE",)
+from src.domain.events.sensors import EventType
+
+from .models import AnomalyDeviation
+
+__all__ = (
+    "ANOMALY_DETECTION_MATRIX_PROFILE_ERROR_MESSAGE",
+    "ANOMALY_DEVIATION_TO_SENSOR_EVENT_TYPE_MAPPING",
+)
 
 
 class CacheNamespace(StrEnum):
     interactive_mode_turned_on = "interactive_mode_turned_on"
 
+
+# Events
+# --------------------------------------------------------------
+ANOMALY_DEVIATION_TO_SENSOR_EVENT_TYPE_MAPPING: dict[
+    AnomalyDeviation, EventType
+] = {
+    AnomalyDeviation.CRITICAL: EventType.CRITICAL,
+    AnomalyDeviation.WARNING: EventType.OK,
+    AnomalyDeviation.OK: EventType.OK,
+    AnomalyDeviation.UNDEFINED: EventType.OK,
+}
 
 # Error messages
 # --------------------------------------------------------------

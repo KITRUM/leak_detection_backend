@@ -191,33 +191,48 @@ For more details read about [DDD](https://en.wikipedia.org/wiki/Domain-driven_de
     ├─ logs                     # Local folder that aggregates all application logs
     ├─ seed                     # Contains seed files that are mandatory for running the application
         └─ baselines            # Contains seed baselines for anomaly detection processing
+            ├─ initial          # Baselines that are selecting on sensor creation
             └─ selection        # Includes initial baselines for the BASELINE SELECTION feature
                 ├─ *.mpstream   # Baseline file
                 └─ mps.json     # The baselines management file. Includes stats
     ├─ http                     # Contains Api endpoints requests examples
     ├─ mock                     # The mock data for running the application in `Debug` mode
     └─ src                      # The sources root
+        ├─ main.py              # Application entrypoint
+        ├─ config.py            # Application configuration
+        ├─ debug.py             # Debug logic that affects only if the mode is DEBUG
         ├─ presentation         # Includes controllers that represent each application entrypoint
-            ├─ platforms        # Platforms API endpoints
-            └─ templates        # Templates API endpoints
-        ├─ application          # Operation layer outlines the business features on the highest level
-            ├─ tsd              # Time series data global feature package
-            ├─ database         # Includes database operations on the high level such as transaction, ...
-            └─ data_lake        # Includes the producer/consumer implementation for this project
-        ├─ domain               # Includes sub-domains that include entities, values-objects, aggregates and services
+            ├─ fields           # User entypoints and contracts in "fields"
+                ├─ api          # API endpoints
+                ├─ views        # Views. Mostly used for starlette admin panel
+                └─ contracts    # Data models that represent request/response schemas
+            └─ templates        # Templates user entrypoints and contracts
+        ├─ application          # Operation layer outlines separated logical features of application, aggregates
+            ├─ tsd              # Features like: background fetching, background processing
+            ├─ simulation       # Features like: background processing
+            └─ data_lake        # Includes the producer/consumer implementation for EDD approach
+        ├─ domain               # Includes sub-domains that contain entities, values-objects, aggregates, services and repositories
             ├─ tsd              # Time series data sub-domain
-                ├─ repository   # Repository pattern implementation
+                ├─ repository   # Repository pattern implementation. Includes the low level database table access
                 ├─ constants    # Specific time series data constants
-                ├─ services     # Includes specific platofms services
-                └─ models       # Includes all kind of entities, contracts, values-objects, etc
-            └─ platforms        # Platforms sub-domain
+                ├─ services     # Includes specific time series data services
+                └─ models       # Includes all kind of entities, aggregates, values-objects, etc
+            └─ fields           # "Fields" sub-domain
         ├─ infrastructure       # Contains services, factories and components that are needed by domain and presentation layers
             ├─ application      # Application components (framework factories, shared entities(aggregates, values objects))
             ├─ errors           # Application errors
-            ├─ models           # Shared models
+            ├─ models           # Shared entities
             ├─ constants        # Shared constants
+            ├─ admin            # Dict-based cache
+            ├─ cache            # Dict-based cache
             └─ database         # Database components (migrations, session factories, etc...)
                 └─ migrations   # Managed by the migration tool automatically
         ├─ static               # Static files for the frontend layer: CSS, JS, Images
         └─ templates            # Includes Jinja2 templates for the Server-side rendering
 ```
+
+# Additional
+
+### About processes and threads
+
+⚠️ Currently features that run on schedule (best initial baseline selection and initial baseline augmentation) run in separate threads instead of processes because of the MVP. Currently, there is no need to use separate processes for now since each sensor claims time series data only one time per 10 minutes. It means that we can easily run the hard computation task without using parallel execution unit. After the MVP it should be done as an external service or using other non-blocking tool

@@ -43,8 +43,8 @@ logger.debug(
     f"{settings.data_lake_consuming_periodicity}"
     "\nThe sensor's anomaly detection baseline best selection interval: "
     f"{settings.sensors.anomaly_detection.baseline_best_selection_interval}"
-    "\nThe sensor's anomaly detection baseline revision interval: "
-    f"{settings.sensors.anomaly_detection.baseline_revision_interval}"
+    "\nThe sensor's anomaly detection baseline augmentation interval: "
+    f"{settings.sensors.anomaly_detection.baseline_augmentation_interval}"
     "\n*******************************************************************"
 )
 
@@ -78,12 +78,18 @@ startup_tasks.extend(
             key="processing",
             coro=application.estimation.process,
         ),
-        partial(
-            tasks.run,
-            namespace="events",
-            key="process",
-            coro=application.events.process,
-        ),
+        # partial(
+        #     tasks.run,
+        #     namespace="sensors",
+        #     key="select_best_initial_baseline",
+        #     coro=application.sensors.select_best_baseline,
+        # ),
+        # partial(
+        #     tasks.run,
+        #     namespace="sensors",
+        #     key="initial_baseline_augmentation",
+        #     coro=application.sensors.initial_baseline_augmentation,
+        # ),
     ]
 )
 
@@ -101,7 +107,7 @@ app: FastAPI = factory.create(
         presentation.anomaly_detection.router,
         presentation.estimation.router,
         presentation.events.sensors.router,
-        presentation.events.templates.router,
+        presentation.events.system.router,
     ),
     startup_tasks=startup_tasks,
     startup_processes=(
@@ -114,8 +120,8 @@ app: FastAPI = factory.create(
         partial(
             processes.run,
             namespace="sensors",
-            key="initial_baseline_revision",
-            callback=application.sensors.initial_baseline_revision,
+            key="initial_baseline_augmentation",
+            callback=application.sensors.initial_baseline_augmentation,
         ),
     ),
 )
@@ -140,5 +146,4 @@ admin.add_view(presentation.tsd.TimeSeriesDataAdminView)
 admin.add_view(presentation.anomaly_detection.AnomalyDetectionsAdminView)
 admin.add_view(presentation.simulation.SimulationDetectionRatesAdminView)
 admin.add_view(presentation.estimation.EstimationAdminView)
-admin.add_view(presentation.events.templates.TemplateEventsAdminView)
 admin.add_view(presentation.events.sensors.SensorEventsAdminView)
