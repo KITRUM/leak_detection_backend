@@ -51,7 +51,7 @@ class _TemplateBase(InternalModel):
     length: np.float64 | None = None
     width: np.float64 | None = None
 
-    platform_id: int
+    field_id: int
 
 
 class TemplateUncommited(_TemplateBase):
@@ -126,5 +126,5 @@ class Template(_TemplateBase):
             else None,
             length=np.float64(schema.length) if schema.length else None,
             width=np.float64(schema.width) if schema.width else None,
-            platform_id=schema.platform_id,
+            field_id=schema.field_id,
         )

@@ -95,7 +95,7 @@ class TemplatesTable(Base):
     length: float = Column(Float, nullable=True, default=None)  # type: ignore
     width: float = Column(Float, nullable=True, default=None)  # type: ignore
 
-    platform_id: int = Column(Integer, nullable=False)  # type: ignore
+    field_id: int = Column(Integer, nullable=False)  # type: ignore
 
     sensors = relationship("SensorsTable", back_populates="template")
 

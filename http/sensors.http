@@ -3,7 +3,7 @@ POST {{HTTP__BASE_URL}}/templates/1/sensors
 Content-Type: application/json
 
 {
-    "name": "trestakk",
+    "name": "snorre_demo",
     "x": 1.0,
     "y": 1.0,
     "z": 1.0 

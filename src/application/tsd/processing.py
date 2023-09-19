@@ -1,6 +1,6 @@
 """
 The general purpose: fetch the data from the external source and parse it
-using the specific platform parser.
+using the specific field parser.
 
 Also, crud operations for the time series data are implemented here.
 """
@@ -63,8 +63,8 @@ async def _mock_process_time_series_data(sensor):
     pre processing using CSV files.
     """
 
-    parser: mock.PlatformParserCallback = mock.get_parser(
-        sensor.template.platform_id
+    parser: mock.FieldParserCallback = mock.get_parser(
+        sensor.template.field_id
     )
 
     # Get the raw string from the CSV file and parse is to the internal model

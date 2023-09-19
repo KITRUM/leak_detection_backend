@@ -61,13 +61,11 @@ class TemplatesRepository(BaseRepository[TemplatesTable]):
 
         return value
 
-    async def by_platform(
-        self, platform_id: int
-    ) -> AsyncGenerator[Template, None]:
-        """Fetch all templates by platform from database."""
+    async def by_field(self, field_id: int) -> AsyncGenerator[Template, None]:
+        """Fetch all templates by field from database."""
 
         query: Select = select(self.schema_class).where(
-            getattr(self.schema_class, "platform_id") == platform_id
+            getattr(self.schema_class, "field_id") == field_id
         )
         result: Result = await self._session.execute(query)
 
@@ -78,7 +76,7 @@ class TemplatesRepository(BaseRepository[TemplatesTable]):
             yield Template.from_orm(schema)
 
     async def get(self, template_id: int) -> Template:
-        """Fetch all templates by platform from database."""
+        """Fetch all templates by field from database."""
 
         schema = await self._get("id", template_id)
         return Template.from_orm(schema)

@@ -21,7 +21,7 @@ from src.domain.estimation import (
     EstimationSummaryUncommited,
     services,
 )
-from src.domain.platforms import Platform, TagInfo
+from src.domain.fields import Field, TagInfo
 from src.domain.simulation import SimulationDetectionRateFlat
 from src.domain.templates import TemplatesRepository
 from src.domain.tsd import Tsd, TsdFlat
@@ -242,8 +242,8 @@ async def process():
         )
 
     # NOTE: Since, we do not wanna abuse the database it is better to add the
-    #       platform enclosed variable for all items in the loop
-    platform: Platform | None = None
+    #       field enclosed variable for all items in the loop
+    field: Field | None = None
 
     simulation_detection_rates = data_lake.simulation_detection_rates  # alias
 
@@ -256,7 +256,7 @@ async def process():
         logger.debug(f"Estimation processing for {detection_rates}")
 
         try:
-            await _process(detection_rates=detection_rates, platform=platform)
+            await _process(detection_rates=detection_rates, field=field)
         except IndexError:
             # If there is no detection_rates in consumed instance
             # just skip this one
@@ -274,7 +274,7 @@ async def process():
 @transaction
 async def _process(
     detection_rates: list[SimulationDetectionRateFlat],
-    platform: Platform | None = None,
+    field: Field | None = None,
 ):
     first_detection_rate = detection_rates[0]
 
@@ -292,12 +292,12 @@ async def _process(
         )
     ]
 
-    if platform is None:
-        # Define the platform for all detections
+    if field is None:
+        # Define the field for all detections
         template = await TemplatesRepository().get(
             time_series_data.sensor.template.id
         )
-        platform = Platform.get_by_id(template.id)
+        field = Field.get_by_id(template.id)
 
     # NOTE: regarding `tag_info`
     # ========================================== #
@@ -315,8 +315,8 @@ async def _process(
     # sensor list.                               #
     # ========================================== #
 
-    tag_info: TagInfo = platform.value.sensor_keys_callback(
-        time_series_data.sensor.name.replace(platform.value.tag, "")
+    tag_info: TagInfo = field.value.sensor_keys_callback(
+        time_series_data.sensor.name.replace(field.value.tag, "")
     )
 
     anomaly_timestamps: list[str] = [

@@ -202,7 +202,7 @@ For more details read about [DDD](https://en.wikipedia.org/wiki/Domain-driven_de
         ├─ config.py            # Application configuration
         ├─ debug.py             # Debug logic that affects only if the mode is DEBUG
         ├─ presentation         # Includes controllers that represent each application entrypoint
-            ├─ platforms        # Platforms user entypoints and contracts
+            ├─ fields           # User entypoints and contracts in "fields"
                 ├─ api          # API endpoints
                 ├─ views        # Views. Mostly used for starlette admin panel
                 └─ contracts    # Data models that represent request/response schemas
@@ -217,7 +217,7 @@ For more details read about [DDD](https://en.wikipedia.org/wiki/Domain-driven_de
                 ├─ constants    # Specific time series data constants
                 ├─ services     # Includes specific time series data services
                 └─ models       # Includes all kind of entities, aggregates, values-objects, etc
-            └─ platforms        # Platforms sub-domain
+            └─ fields           # "Fields" sub-domain
         ├─ infrastructure       # Contains services, factories and components that are needed by domain and presentation layers
             ├─ application      # Application components (framework factories, shared entities(aggregates, values objects))
             ├─ errors           # Application errors

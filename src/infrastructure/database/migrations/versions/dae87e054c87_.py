@@ -1,15 +1,15 @@
 """empty message
 
-Revision ID: 0a8188cb93fe
+Revision ID: dae87e054c87
 Revises: 
-Create Date: 2023-09-08 10:37:38.875414
+Create Date: 2023-09-19 10:26:23.310780
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '0a8188cb93fe'
+revision = 'dae87e054c87'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -26,6 +26,12 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_sensors_configurations'))
     )
+    op.create_table('system_events',
+    sa.Column('type', sa.String(), nullable=False),
+    sa.Column('message', sa.String(), nullable=False),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_system_events'))
+    )
     op.create_table('templates',
     sa.Column('currents_path', sa.String(), nullable=False),
     sa.Column('waves_path', sa.String(), nullable=False),
@@ -40,7 +46,7 @@ def upgrade() -> None:
     sa.Column('internal_volume', sa.Float(), nullable=True),
     sa.Column('length', sa.Float(), nullable=True),
     sa.Column('width', sa.Float(), nullable=True),
-    sa.Column('platform_id', sa.Integer(), nullable=False),
+    sa.Column('field_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_templates'))
     )
@@ -56,13 +62,6 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['template_id'], ['templates.id'], name=op.f('fk_sensors_template_id_templates')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_sensors')),
     sa.UniqueConstraint('name', name=op.f('uq_sensors_name'))
-    )
-    op.create_table('templates_events',
-    sa.Column('type', sa.String(), nullable=False),
-    sa.Column('template_id', sa.Integer(), nullable=False),
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['template_id'], ['templates.id'], name=op.f('fk_templates_events_template_id_templates')),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_templates_events'))
     )
     op.create_table('estimations_summaries',
     sa.Column('result', sa.String(), nullable=False),
@@ -115,8 +114,8 @@ def downgrade() -> None:
     op.drop_table('time_series_data')
     op.drop_table('sensors_events')
     op.drop_table('estimations_summaries')
-    op.drop_table('templates_events')
     op.drop_table('sensors')
     op.drop_table('templates')
+    op.drop_table('system_events')
     op.drop_table('sensors_configurations')
     # ### end Alembic commands ###
