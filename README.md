@@ -29,17 +29,37 @@ For running the application locally without a tool like Docker you would need to
 First of all you have to install Python3.11 and SQLite3 on your machine since they are main infrastructure components.
 More information about the installation process you can find _[HERE](https://github.com/KitRUM/leak_detection_backend/wiki/The-project-is-powered-by)_
 
-Then you have to install Python dependencies that are used for running the application. For doing this we recommend using `pipenv` as a tool for managing your virtual environment and project dependencies (_but if you prefer using conda for example feel free to do this_).
+Then you have to install Python dependencies that are used for running the application. For doing this we just use build-in tools and pip-tools.
 
 ```bash
-# install the pipenv tool
-pip install pipenv
+# install pip-tools
+pip install pip-tools
+
+# create the environment
+python -m venv venv
 
 # activate the virtual environment
-pipenv shell
+# unix
+source /venv/bin/activate
 
-# install dependencies from the Pipfile.lock file
-pipenv sync --dev
+# windows ()
+.\venv\Scripts\activate
+
+
+
+# install dependencies
+pip-sync
+```
+
+
+#### Install new deps
+
+```bash
+# install new
+"requests" >> requirements.in
+"requirements~=2.31" >> constraints.txt
+pip-compile -c constraints.txt  # generates the requirements.txt
+pip-sync  # alias to pip install -r requirements.txt
 ```
 
 ### 🗃️ Setup the database
@@ -148,17 +168,17 @@ $env:DATABASE__NAME = "leak_detection.sqlite3";
 
 #### Using `.env` file
 
-Or as a preffered alternative you may use the `.env` that is automatically complete the stuff above for you if you use `pipenv` tool.
-
-It means you jsut need to complete next steps:
-
 ```bash
 # create the .env file base on the .env.default file
 cp .env.default .env
 
-# activate the virtual environment & export all environment variables automatically ༼ つ ◕_◕ ༽つ━☆ﾟ.*･｡ﾟ
-pipenv shell
+# export all environment variables
+set -o allexport; source .env; set +o allexport
 ```
+
+> 💡 Also, you can use dotenv plugin if you familar with Zsh
+> 
+> activate the virtual environment & export all environment variables automatically ༼ つ ◕_◕ ༽つ━☆ﾟ.*･｡ﾟ
 
 <br>
 
@@ -183,20 +203,23 @@ For more details read about [DDD](https://en.wikipedia.org/wiki/Domain-driven_de
 └─ leak_detection_backend       # Project root
     ├─ .gitignore               # Exclude files and directories that match patterns in it before Git will index the root
     ├─ .env.default             # Contains default project configurations
-    ├─ .pyproject.toml          # Development dependencies configuration file
-    ├─ Pipfile                  # The Pipenv configuration file for managing dependencies
-    ├─ Pipfile.lock             # Managed by the Pipenv automatically
+    ├─ .dockerignore            # Docker COPY ignore files
+    ├─ requirements.in          # Dependencies with versions specified
+    ├─ requirements.txt         # Locked dependencies by pip-compile
+    ├─ requirements.dev.in      # Dev dependencies with versions specified
+    ├─ requirements.dev.txt     # Locked dev dependencies by pip-compile
     ├─ alembic.ini              # The alembic (migration tool) configuration file
+    ├─ pyproject.toml           # Development dependencies configuration file
     ├─ Makefile                 # Contains Bash scripts for comfortable work from the terminal
     ├─ logs                     # Local folder that aggregates all application logs
+    ├─ http                     # Contains Api endpoints requests examples
+    ├─ mock                     # The mock data for running the application in `Debug` mode
     ├─ seed                     # Contains seed files that are mandatory for running the application
         └─ baselines            # Contains seed baselines for anomaly detection processing
             ├─ initial          # Baselines that are selecting on sensor creation
             └─ selection        # Includes initial baselines for the BASELINE SELECTION feature
                 ├─ *.mpstream   # Baseline file
                 └─ mps.json     # The baselines management file. Includes stats
-    ├─ http                     # Contains Api endpoints requests examples
-    ├─ mock                     # The mock data for running the application in `Debug` mode
     └─ src                      # The sources root
         ├─ main.py              # Application entrypoint
         ├─ config.py            # Application configuration

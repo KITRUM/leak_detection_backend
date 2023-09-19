@@ -1,0 +1,12 @@
+.*
+mock/
+http/
+logs/
+Makefile
+Dockerfile
+docker-compose.yaml
+pyproject.toml
+requirements.dev.*
+requirements.in
+__pycache__/
+venv/
