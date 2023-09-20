@@ -4,8 +4,8 @@ from fastapi import APIRouter, WebSocket
 from loguru import logger
 from websockets.exceptions import ConnectionClosed
 
+from src.application import anomaly_detection
 from src.application.data_lake import data_lake
-from src.domain.anomaly_detection import services as anomaly_detection_services
 from src.infrastructure.contracts import Response, ResponseMulti
 from src.infrastructure.errors import NotFoundError
 from src.presentation.anomaly_detection.contracts import AnomalyDetectionPublic
@@ -28,9 +28,7 @@ async def anomaly_detections_for_simulation(ws: WebSocket, sensor_id: int):
         historical_data: list[AnomalyDetectionPublic] = [
             AnomalyDetectionPublic.from_orm(instance)
             for instance in (
-                await anomaly_detection_services.crud.get_historical_data(
-                    sensor_id
-                )
+                await anomaly_detection.get_historical_data(sensor_id)
             )
         ]
 

@@ -7,6 +7,8 @@ from src.domain.sensors import Sensor
 
 from .models import CartesianCoordinates, Leakage
 
+__all__ = ("RegressionProcessor",)
+
 
 # This type corresponds to the detection rate processor
 # that is used as a callback by regressions.

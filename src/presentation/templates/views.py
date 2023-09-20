@@ -8,17 +8,17 @@ __all__ = ("TemplatesAdminView",)
 class TemplatesAdminView(ModelView, model=TemplatesTable):
     name = "Template"
     name_plural = "Templates"
-    column_list = ("id", "name", "angle_from_north", "platform_id", "sensors")
+    column_list = ("id", "name", "angle_from_north", "field_id", "sensors")
     column_searchable_list = (
         "name",
         "angle_from_north",
-        "platform_id",
+        "field_id",
         "sensors",
     )
     column_sortable_list = (
         "id",
         "name",
         "angle_from_north",
-        "platform_id",
+        "field_id",
         "sensors",
     )

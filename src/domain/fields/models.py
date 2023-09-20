@@ -4,7 +4,7 @@ from pydantic import Field
 
 from src.infrastructure.models import InternalModel
 
-__all__ = ("PlatformInfo", "TagInfo")
+__all__ = ("FieldInfo", "TagInfo")
 
 
 def not_implemented_callback(_: str) -> NoReturn:
@@ -19,10 +19,10 @@ class TagInfo(InternalModel):
     sensor_number: int
 
 
-class PlatformInfo(InternalModel):
+class FieldInfo(InternalModel):
     """
-    This internal model represent the Platform in the database.
-    It is used in domain.platforms.constants
+    This internal model represent the Field in the database.
+    It is used in domain.fields.constants
     """
 
     id: int

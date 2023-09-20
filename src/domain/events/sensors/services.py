@@ -1,31 +1,39 @@
-from src.infrastructure.database.services.transaction import transaction
+from collections import defaultdict, deque
+from contextlib import suppress
+from functools import partial
+from typing import Deque
 
-from .models import Event, EventFlat, EventUncommited
-from .repository import SensorsEventsRepository
+from loguru import logger
 
+from .models import EventType, EventUncommited
 
-@transaction
-async def create(schema: EventUncommited) -> Event:
-    """Create the database instance and return the reach datamodel."""
+__all__ = ("process",)
 
-    repository = SensorsEventsRepository()
-    instance: EventFlat = await repository.create(schema)
-
-    return await repository.get(instance.id)
-
-
-@transaction
-async def get_historical_data(sensor_id: int) -> list[Event]:
-    """Get the historical data."""
-
-    return [
-        instance
-        async for instance in SensorsEventsRepository().by_sensor(sensor_id)
-    ]
+# TODO: Change the var-storage to the cache
+LAST_SENSORS_EVENTS_TYPES: dict[int, Deque[EventType]] = defaultdict(
+    partial(deque, maxlen=3)  # type: ignore[arg-type]
+)
 
 
-@transaction
-async def get_last(sensor_id: int) -> EventFlat:
-    """Get the last item."""
+async def process(
+    sensor_id: int, current_event_type: EventType
+) -> EventUncommited | None:
+    """This function represents the engine of producing events
+    that are related to the specific sensor.
+    """
 
-    return await SensorsEventsRepository().last(sensor_id)
+    with suppress(IndexError):
+        if current_event_type == LAST_SENSORS_EVENTS_TYPES[sensor_id][-1]:
+            return None
+
+    create_schema: EventUncommited = EventUncommited(
+        type=current_event_type, sensor_id=sensor_id
+    )
+
+    # Update the last event type context with the new one
+    # if a new one DOES NOT match it
+    LAST_SENSORS_EVENTS_TYPES[sensor_id].append(current_event_type)
+
+    logger.info(f"Sensor[{sensor_id}] event is handled: {current_event_type}")
+
+    return create_schema

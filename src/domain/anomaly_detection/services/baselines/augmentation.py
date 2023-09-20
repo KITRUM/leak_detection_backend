@@ -1,5 +1,5 @@
 """
-This module includes services for the initial baseline revision.
+This module includes services for the initial baseline does the augmentation.
 """
 
 import numpy as np
@@ -9,10 +9,10 @@ from stumpy import aampi
 
 from src.domain.sensors import Sensor
 
-__all__ = ("initial_baseline_update",)
+__all__ = ("initial_baseline_augment",)
 
 
-async def initial_baseline_update(
+async def initial_baseline_augment(
     sensor: Sensor, cleaned_concentrations: NDArray[np.float64]
 ) -> aampi:
     """Takes the cleaned concentrations data from all historical data

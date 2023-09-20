@@ -4,7 +4,6 @@ simulation processing results.
 
 P.S. this module is not proofed yet...
 """
-
 from datetime import datetime
 
 import numpy as np
@@ -17,17 +16,36 @@ from src.domain.anomaly_detection import AnomalyDeviation
 from src.domain.estimation import (
     DATETIME_FORMAT,
     EstimationResult,
+    EstimationsSummariesRepository,
     EstimationSummary,
     EstimationSummaryUncommited,
     services,
 )
-from src.domain.platforms import Platform, TagInfo
+from src.domain.fields import Field, TagInfo
 from src.domain.simulation import SimulationDetectionRateFlat
-from src.domain.templates import services as templates_services
+from src.domain.templates import TemplatesRepository
 from src.domain.tsd import Tsd, TsdFlat
-from src.domain.tsd import services as tsd_services
+from src.domain.tsd.repository import TsdRepository
+from src.infrastructure.database import transaction
 
 __all__ = ("process",)
+
+
+@transaction
+async def create(schema: EstimationSummaryUncommited) -> EstimationSummary:
+    return await EstimationsSummariesRepository().create(schema)
+
+
+@transaction
+async def get_historical_data(sensor_id: int) -> list[EstimationSummary]:
+    """Get the historical data."""
+
+    return [
+        instance
+        async for instance in EstimationsSummariesRepository().by_sensor(
+            sensor_id
+        )
+    ]
 
 
 class DeprecatedEstimationProcessor:
@@ -224,8 +242,8 @@ async def process():
         )
 
     # NOTE: Since, we do not wanna abuse the database it is better to add the
-    #       platform enclosed variable for all items in the loop
-    platform: Platform | None = None
+    #       field enclosed variable for all items in the loop
+    field: Field | None = None
 
     simulation_detection_rates = data_lake.simulation_detection_rates  # alias
 
@@ -238,92 +256,104 @@ async def process():
         logger.debug(f"Estimation processing for {detection_rates}")
 
         try:
+            await _process(detection_rates=detection_rates, field=field)
+        except IndexError:
             # If there is no detection_rates in consumed instance
             # just skip this one
-            first_detection_rate = detection_rates[0]
-        except IndexError:
             logger.error(
                 "Simulation consumed instance does have have any items"
             )
             continue
-
-        time_series_data: Tsd = await tsd_services.get_by_id(
-            id_=first_detection_rate.anomaly_detection.time_series_data_id
-        )
-
-        last_time_series_data: list[
-            TsdFlat
-        ] = await tsd_services.get_last_window_size_set(
-            sensor_id=time_series_data.sensor.id, last_id=time_series_data.id
-        )
-
-        if platform is None:
-            # Define the platform for all detections
-            template = await templates_services.get_template_by_id(
-                time_series_data.sensor.template.id,
-            )
-            platform = Platform.get_by_id(template.id)
-
-        # NOTE: regarding `tag_info`
-        # ========================================== #
-        # Comment C.Kehl: for now, this ONLY works   #
-        # if the sensors in the frontend are added   #
-        # (in terms of their tag) from the beginning #
-        # (i.e. from the sensor of a template with   #
-        # sensor number '1') in sequence to the last #
-        # sensor (i.e. sensor number '4').           #
-        #                                            #
-        # For an arbitrary insertion order, this     #
-        # procedure needs to map the sensor number   #
-        # to the correct index (from the insertion   #
-        # order) within the 'SensorsRepository()'    #
-        # sensor list.                               #
-        # ========================================== #
-
-        tag_info: TagInfo = platform.value.sensor_keys_callback(
-            time_series_data.sensor.name.replace(platform.value.tag, "")
-        )
-
-        anomaly_timestamps: list[str] = [
-            tsd.timestamp.strftime(DATETIME_FORMAT)
-            for tsd in last_time_series_data
-        ]
-        # TODO: investigate if we do need to wait
-        #       for window size elements to be populated
-        estimation_processor = DeprecatedEstimationProcessor(
-            anomaly_severity=first_detection_rate.anomaly_detection.value,
-            anomaly_concentrations=np.array(
-                [tsd.ppmv for tsd in last_time_series_data]
-            ),
-            anomaly_timestamps=anomaly_timestamps,
-            detection_rates=detection_rates,
-            simulator_concentrations=np.array(
-                [detection.concentrations for detection in detection_rates]
-            ),
-            sensor_number=tag_info.sensor_number - 1,
-        )
-
-        try:
+        except Exception as error:
             # NOTE: Currently we do not care about this processor that much,
             #       so all errors are handled
-            estimation_summary_uncommited: EstimationSummaryUncommited = (
-                estimation_processor.process()
-            )
-        except Exception as error:
             logger.error(error)
             continue
 
-        estimation_summary: EstimationSummary = await services.save(
+
+@transaction
+async def _process(
+    detection_rates: list[SimulationDetectionRateFlat],
+    field: Field | None = None,
+):
+    first_detection_rate = detection_rates[0]
+
+    time_series_data: Tsd = await TsdRepository().get(
+        id_=first_detection_rate.anomaly_detection.time_series_data_id
+    )
+
+    last_time_series_data: list[TsdFlat] = [
+        item
+        async for item in TsdRepository().filter(
+            sensor_id=time_series_data.sensor.id,
+            last_id=time_series_data.id,
+            limit=settings.anomaly_detection.window_size,
+            order_by_desc=True,
+        )
+    ]
+
+    if field is None:
+        # Define the field for all detections
+        template = await TemplatesRepository().get(
+            time_series_data.sensor.template.id
+        )
+        field = Field.get_by_id(template.id)
+
+    # NOTE: regarding `tag_info`
+    # ========================================== #
+    # Comment C.Kehl: for now, this ONLY works   #
+    # if the sensors in the frontend are added   #
+    # (in terms of their tag) from the beginning #
+    # (i.e. from the sensor of a template with   #
+    # sensor number '1') in sequence to the last #
+    # sensor (i.e. sensor number '4').           #
+    #                                            #
+    # For an arbitrary insertion order, this     #
+    # procedure needs to map the sensor number   #
+    # to the correct index (from the insertion   #
+    # order) within the 'SensorsRepository()'    #
+    # sensor list.                               #
+    # ========================================== #
+
+    tag_info: TagInfo = field.value.sensor_keys_callback(
+        time_series_data.sensor.name.replace(field.value.tag, "")
+    )
+
+    anomaly_timestamps: list[str] = [
+        tsd.timestamp.strftime(DATETIME_FORMAT)
+        for tsd in last_time_series_data
+    ]
+    # TODO: investigate if we do need to wait
+    #       for window size elements to be populated
+    estimation_processor = DeprecatedEstimationProcessor(
+        anomaly_severity=first_detection_rate.anomaly_detection.value,
+        anomaly_concentrations=np.array(
+            [tsd.ppmv for tsd in last_time_series_data]
+        ),
+        anomaly_timestamps=anomaly_timestamps,
+        detection_rates=detection_rates,
+        simulator_concentrations=np.array(
+            [detection.concentrations for detection in detection_rates]
+        ),
+        sensor_number=tag_info.sensor_number - 1,
+    )
+
+    estimation_summary_uncommited: EstimationSummaryUncommited = (
+        estimation_processor.process()
+    )
+
+    estimation_summary: EstimationSummary = (
+        await EstimationsSummariesRepository().create(
             estimation_summary_uncommited
         )
+    )
+    # Update the data lake for websocket connections
+    data_lake.estimation_summary_set_by_sensor[
+        estimation_summary.sensor_id
+    ].storage.append(estimation_summary)
 
-        # Update the data lake for websocket connections
-        data_lake.estimation_summary_set_by_sensor[
-            time_series_data.sensor.id
-        ].storage.append(estimation_summary)
-
-        log_estimation(
-            estimation_summary=estimation_summary,
-            tag_info=tag_info,
-            anomaly_timestamps=anomaly_timestamps,
-        )
+    log_estimation(
+        estimation_summary=estimation_summary,
+        tag_info=tag_info,
+        anomaly_timestamps=anomaly_timestamps,
+    )

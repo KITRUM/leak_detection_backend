@@ -3,9 +3,9 @@ from functools import lru_cache
 
 from src.infrastructure.errors import NotFoundError
 
-from .models import PlatformInfo, TagInfo
+from .models import FieldInfo, TagInfo
 
-__all__ = ("Platform",)
+__all__ = ("Field",)
 
 
 def _trestakk_template_sensor_keys(payload: str) -> TagInfo:
@@ -54,31 +54,29 @@ def _snorre_template_sensor_keys(sensor_name: str) -> TagInfo:
     )
 
 
-class Platform(Enum):
-    """The enumeration of supported platforms."""
+class Field(Enum):
+    """The enumeration of supported fields."""
 
-    TRESTAKK = PlatformInfo(
+    TRESTAKK = FieldInfo(
         id=1,
         name="trestakk",
         tag="19XT",
         sensor_keys_callback=_trestakk_template_sensor_keys,
     )
-    SNORRE = PlatformInfo(
+    SNORRE = FieldInfo(
         id=2,
         name="snorre",
         tag="19H-QI___",
         sensor_keys_callback=_snorre_template_sensor_keys,
     )
-    ASKELADD = PlatformInfo(id=3, name="askeladd", tag="not implemented")
-    TROLL = PlatformInfo(id=4, name="troll", tag="not implemented")
+    ASKELADD = FieldInfo(id=3, name="askeladd", tag="not implemented")
+    TROLL = FieldInfo(id=4, name="troll", tag="not implemented")
 
     @classmethod
     @lru_cache
-    def get_by_id(cls, id: int) -> "Platform":
-        for platform in cls:
-            if platform.value.id == id:
-                return platform
+    def get_by_id(cls, id: int) -> "Field":
+        for field in cls:
+            if field.value.id == id:
+                return field
 
-        raise NotFoundError(
-            message="Can not find the platform with the given id"
-        )
+        raise NotFoundError(message="Can not find the field with the given id")
