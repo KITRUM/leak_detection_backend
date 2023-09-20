@@ -1,9 +1,28 @@
+# pip tools
+.PHONY: lock
+lock:
+	pip-compile requirements.in -o requirements.txt
+
+
+.PHONY: lock_dev
+lock_dev:
+	pip-compile requirements.dev.in -o requirements.dev.txt
+
+
+
+
+
+# run the application
 .PHONY: run
 run:
 	uvicorn src.main:app
 
 
-# alias of cq is code qualit
+
+
+# code quality
+
+# alias of cq is code quality
 .PHONY: cq
 cq:
 	python -m black ./

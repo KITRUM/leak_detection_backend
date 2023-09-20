@@ -1,0 +1,22 @@
+SQLAlchemy[asyncio,mypy]~=2.0
+aiosqlite~=0.19
+alembic~=1.10
+dtw-python==1.3
+fastapi==0.92.0
+greenlet~=2.0 # required by SQLAlchemy: https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html
+gunicorn~=20.1
+itsdangerous~=2.1
+loguru~=0.6
+matplotlib~=3.5
+numpy~=1.24
+pandas~=1.5.2
+pint~=0.19.2
+pydantic[dotenv]~=1.10
+python-dateutil~=2.8
+python-multipart~=0.0.6
+scikit-learn~=1.2
+sqladmin~=0.14
+stumpy~=1.11.1 # 1.12.x has breaking changes. Issue https://github.com/TDAmeritrade/stumpy/issues/914
+tomli~=2.0.1
+uvicorn~=0.21.0
+websockets~=11.0
