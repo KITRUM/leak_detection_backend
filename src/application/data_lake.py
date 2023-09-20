@@ -20,7 +20,7 @@ from src.config import settings
 from src.domain.anomaly_detection import AnomalyDetection
 from src.domain.estimation import EstimationSummary
 from src.domain.events import sensors, system
-from src.domain.simulation import SimulationDetectionRateFlat
+from src.domain.simulation import Detection, SimulationDetectionRateFlat
 from src.domain.tsd import Tsd
 
 T = TypeVar("T")
@@ -73,7 +73,7 @@ class DataLake:
     anomaly_detections_by_sensor: dict[int, LakeItem[AnomalyDetection]]
 
     # Storage for reducing the database usage. Uses for background processing
-    simulation_detection_rates: LakeItem[list[SimulationDetectionRateFlat]]
+    simulation_detections: LakeItem[list[Detection]]
 
     # Storage for reducing the database usage. Uses by websocket connection
     estimation_summary_set_by_sensor: dict[int, LakeItem[EstimationSummary]]
@@ -94,9 +94,7 @@ data_lake = DataLake(
         partial(LakeItem[AnomalyDetection])
     ),
     # Simulation
-    simulation_detection_rates=LakeItem[list[SimulationDetectionRateFlat]](
-        limit=10
-    ),
+    simulation_detections=LakeItem[list[Detection]](limit=10),
     # Estimation
     estimation_summary_set_by_sensor=defaultdict(
         partial(LakeItem[EstimationSummary], limit=10)
