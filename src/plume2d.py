@@ -831,7 +831,7 @@ def get_concentration_sensor(U_i, alpha_i, S, L, template_angle, runtime, steps,
         Co = (Co_list[i] + Co_list[j])/2
         sigma = (sigma_list[i] + sigma_list[j])/2
         C_i = Co*np.exp(-r**2/(2*sigma**2))
-        C_i = C_i* 35 #to transfer mg/L to ppmv. In our case we do need to be super accurate
+        C_i = C_i* 35 #to transfer mg/L to ppmv. In our case we do not need to be super accurate
     return C_i
 
 
