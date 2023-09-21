@@ -38,7 +38,7 @@ class MultiMetricCorrelation(object):
         self,
         reference,
         hypotheses,
-        weight_dtw=0.5,
+        weight_dtw=0.4,
         threshold=1.645,
         max_lag=20,
         beta=0.002,
@@ -50,13 +50,16 @@ class MultiMetricCorrelation(object):
         :param hypotheses: array of the simulated signals from 'Simulator'
         :return:
         """
+        #Parameters:
         self._x = reference
         self._y = hypotheses
         self.weight_dtw = weight_dtw
         self.threshold = threshold
         self.max_lag = max_lag
         self.beta = beta
+        self.plot = plot
 
+        #Results crosscorrelations:
         self.crosscorr_lags = []
         self.crosscorr_values = []
         self.crosscorr_z_scores = []
@@ -67,6 +70,7 @@ class MultiMetricCorrelation(object):
         self.crosscorr_best_score = 0.0
         self.crosscorr_leak_index = None
 
+        #Results dtw:
         self.dtw_values = []
         self.dtw_z_scores = []
         self.dtw_mean = 0.0
@@ -74,25 +78,26 @@ class MultiMetricCorrelation(object):
         self.dtw_best = 0.0
         self.dtw_best_score = 0.0
         self.dtw_leak_index = None
-
+        
+        #Main results:
         self.final_z_scores = []
-        self.consensus = True
+        self.consensus = False
         self.extreme_indices = []
         self._verbose = verbose
-        self._plot = plot
+        
 
     def compute(self):
         self.run_dtw()
         self.run_crosscorr()
         self.get_consensus()
-        if self._plot:
+        if self.plot:
             self.plot_series()
 
     @property
     def leak_index_mat(self) -> dict:
         return {
-            "crosscorr": self._crosscorr_index,
-            "dtw": self._dtw_index,
+            "crosscorr": self.crosscorr_leak_index,
+            "dtw": self.dtw_leak_index,
         }
 
     # calculate cross correlation for all candidate leak points for a given sensor
@@ -135,13 +140,13 @@ class MultiMetricCorrelation(object):
         ) / self.crosscorr_std
         if self._verbose:
             print(
-                "Crosscorrelation - min = {}, max = {}".format(
+                "Crosscorrelation: min = {}, max = {}".format(
                     np.min(self.crosscorr_values),
                     np.max(self.crosscorr_values),
                 )
             )
             print(
-                "DTW - mean = {}, std-dev. = {}".format(
+                "DTW: mean = {}, std-dev. = {}".format(
                     self.crosscorr_mean, self.crosscorr_std
                 )
             )
@@ -176,12 +181,12 @@ class MultiMetricCorrelation(object):
 
         if self._verbose:
             print(
-                "DTW - min = {}, max = {}".format(
+                "DTW: min = {}, max = {}".format(
                     np.min(self.dtw_values), np.max(self.dtw_values)
                 )
             )
             print(
-                "DTW - mean = {}, std-dev. = {}".format(
+                "DTW: mean = {}, std-dev. = {}".format(
                     self._dtw_mean, self._dtw_sigma
                 )
             )
@@ -224,15 +229,15 @@ class MultiMetricCorrelation(object):
         ]
 
         # if we have more than 1 candidate - consensus has not been reached
-        if self.extreme_indices != 1:
-            self.consensus = False
+        if len(self.extreme_indices) == 1:
+            self.consensus = True
 
         if self._verbose:
             print(
-                f"DTW - best_score = {self.dtw_best_score},  index exceeds barrier = {self.dtw_leak_index}"
+                f"DTW: best_score = {self.dtw_best_score},  index exceeds barrier = {self.dtw_leak_index}"
             )
             print(
-                f"Crosscorrelation - best_score = {self.crosscorr_best_score},  index exceeds barrier = {self.crosscorr_leak_index}"
+                f"Crosscorrelation: best_score = {self.crosscorr_best_score},  index exceeds barrier = {self.crosscorr_leak_index}"
             )
 
     def plot_series(self):
@@ -265,7 +270,7 @@ class DeprecatedEstimationProcessor:
         sensor_number: int,
     ) -> None:
         self._detection_rates_ids: list[int] = [
-            rate.id for rate in detection_rates
+            detection.id for detection in detections
         ]
         self.detection_rates: NDArray = np.array(
             [rate.concentrations for rate in detection_rates]
@@ -275,15 +280,7 @@ class DeprecatedEstimationProcessor:
         assert (
             self.detections.shape[0] == self.simulator_concentrations.shape[0]
         )
-        # =============================================== #
-        # Comment C.Kehl: remember that 'detection_rates' #
-        # has one more entry of 'sensor_i' (dim 1) than   #
-        # 'simulator_concentrations'. That one more entry #
-        # is the entry of the 'average detection rate of  #
-        # all sensors for that leak'. Hence:              #
-        # self.detection_rates.shape[1] =                 #
-        # self.simulator_concentrations.shape[1] + 1      #
-        # =============================================== #
+
 
         self.nleaks = self.simulator_concentrations.shape[0]
         self.nsensors = 1  # - Weird Here we should receive the number of working sensor for current event at the current template
@@ -315,9 +312,9 @@ class DeprecatedEstimationProcessor:
 
         # corrmat = {"croscor": 0, "dtw": 0}
         # Leak correlation matrix: nr_sensors x nr_leaks
-        leak_mat = np.zeros((self.nsensors, self.nleaks), dtype=np.int32)
-        result_tracker = None
-        print("--------        Sensor {}      --------".format(self.sensor_id))
+        #leak_mat = np.zeros((self.nsensors, self.nleaks), dtype=np.int32)
+        #result_tracker = None
+        print("--------        Sensor {}      --------".format(self.sensor_id))##Weird. It implies we have only one sensor but two lines higher we  create a matrix for several sensors
 
         maxlen = min(
             len(self.sensor_concentrations),
@@ -327,12 +324,36 @@ class DeprecatedEstimationProcessor:
         N = self.simulator_concentrations.shape[1]
         hypotheses = np.squeeze(self.simulator_concentrations[:, N - maxlen :])
 
-        corr1 = services.correlation.MultiMetricCorrelation(
+        #We need Estimator():
+        #self
+        # Estimator
+        #  object for each template
+
+
+
+        corr1 = MultiMetricCorrelation(
             reference=reference,
             hypotheses=hypotheses,
-            verbose=self.verbose,
+            weight_dtw=0.4,
+            threshold=1.645,
+            max_lag=20,
+            beta=0.002,
+            verbose=False,
+            plot=False
         )
         corr1.compute()
+
+        
+        if corr1.consensus == False:
+
+
+        leak_index = consensus.
+
+
+
+
+
+
         result_tracker = (
             corr1.all_exceed_sigma_squared(),
             ("mi", "dtw", "mpdist"),
@@ -349,10 +370,6 @@ class DeprecatedEstimationProcessor:
             )
         if result_tracker[0]:
             leak_index = corr1.consensus_index()
-            q1 = corr1.consensus_quality()
-            q2 = self.detection_rates[leak_index]
-            Q = q1 * q2
-            print("q1: {}; q2: {}; Q: {}".format(q1, q2, Q))
             local_leak_mat = corr1.leak_index_mat
             for method_id in result_tracker[1]:
                 corrmat[method_id] += 1
@@ -420,26 +437,6 @@ def log_estimation(
             "Elevated gas levels at sensor "
             f"{tag_info.sensor_number} are not crucial."  # noqa
         )
-
-
-async def process():
-    """Consume simulation detection rates from data lake
-    and run the estimation. The results are saved to the database
-    and data lake for consuming by websockets.
-    """
-
-    # If the simulation is turned off there is no reason to proceed
-    if not settings.simulation.turn_on:
-        return
-
-    # get the anomaly status
-    # if anomaly_detection status is Critical:
-    #    remember the date
-    # NOTE: Since, we do not wanna abuse the database it is better to add the
-    #       platform enclosed variable for all items in the loop
-    platform: Platform | None = None
-
-    simulation_detection_rates = data_lake.simulation_detection_rates  # alias
 
 
 async def process():
