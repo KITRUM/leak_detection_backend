@@ -32,9 +32,8 @@ exclude = [
     "venv",
     "Makefile",
     "migrations",
-    "simulator",
-    "anomaly_detector",
-    "estimator"
+    "plume2d.py",
+    "src/application/estimation/core.py"
 ]
 
 
@@ -112,7 +111,7 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 show_error_codes = true
 namespace_packages = true
-exclude = ["migrations", "estimation", "database"]
+exclude = ["migrations", "estimation", "database", "plume2d.py"]
 
 # Silint "type import errors" as our 3rd-party libs does not have types
 # Check: https://mypy.readthedocs.io/en/latest/config_file.html#import-discovery
@@ -123,6 +122,7 @@ module = [
     "websockets.exceptions",
     "stumpy.*",
     "scipy.*",
+    "fastdtw.*"
 ]
 ignore_missing_imports = true
 

@@ -17,6 +17,7 @@ from src.domain.anomaly_detection import (
     AnomalyDetectionFlat,
     AnomalyDetectionRepository,
     AnomalyDetectionUncommited,
+    AnomalyDeviation,
     services,
 )
 from src.domain.tsd import Tsd
@@ -91,9 +92,12 @@ async def _process(create_schema: AnomalyDetectionUncommited, tsd: Tsd):
         ].storage.append(event)
 
     # Update the data lake
-    data_lake.anomaly_detections_for_simulation.storage.append(
-        anomaly_detection
-    )
     data_lake.anomaly_detections_by_sensor[tsd.sensor.id].storage.append(
         anomaly_detection
     )
+
+    # NOTE: Simulation performs only if CRITICAL anomaly deviation
+    if anomaly_detection.value == AnomalyDeviation.CRITICAL:
+        data_lake.anomaly_detections_for_simulation.storage.append(
+            anomaly_detection
+        )

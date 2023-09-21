@@ -18,9 +18,7 @@ from typing import AsyncGenerator, Deque, Generic, TypeVar
 
 from src.config import settings
 from src.domain.anomaly_detection import AnomalyDetection
-from src.domain.estimation import EstimationSummary
 from src.domain.events import sensors, system
-from src.domain.simulation import SimulationDetectionRateFlat
 from src.domain.tsd import Tsd
 
 T = TypeVar("T")
@@ -54,9 +52,14 @@ class LakeItem(Generic[T]):
             await asyncio.sleep(settings.data_lake_consuming_periodicity)
 
 
+# NOTE: The data lake is implemented in order to reduce the database usage
+#       and to provide the data for the websocket connections.
+#       Probably it should be replaced with the external service like cache...
+
+
 @dataclass
 class DataLake:
-    """This class represents the data leak
+    """This class represents the data lake
     that immitates producer/consumer behaviour.
 
     P.S. The regular python deque interface is preferable.
@@ -72,12 +75,6 @@ class DataLake:
     # Uses by websocket connection
     anomaly_detections_by_sensor: dict[int, LakeItem[AnomalyDetection]]
 
-    # Storage for reducing the database usage. Uses for background processing
-    simulation_detection_rates: LakeItem[list[SimulationDetectionRateFlat]]
-
-    # Storage for reducing the database usage. Uses by websocket connection
-    estimation_summary_set_by_sensor: dict[int, LakeItem[EstimationSummary]]
-
     # Events [sensors]
     events_by_sensor: dict[int, LakeItem[sensors.Event]]
 
@@ -92,14 +89,6 @@ data_lake = DataLake(
     anomaly_detections_for_simulation=LakeItem[AnomalyDetection](limit=10),
     anomaly_detections_by_sensor=defaultdict(
         partial(LakeItem[AnomalyDetection])
-    ),
-    # Simulation
-    simulation_detection_rates=LakeItem[list[SimulationDetectionRateFlat]](
-        limit=10
-    ),
-    # Estimation
-    estimation_summary_set_by_sensor=defaultdict(
-        partial(LakeItem[EstimationSummary], limit=10)
     ),
     # Events [sensors]
     events_by_sensor=defaultdict(partial(LakeItem[sensors.Event], limit=1)),

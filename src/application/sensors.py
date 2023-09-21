@@ -297,7 +297,7 @@ async def _select_best_baseline():
     # if seed baseline feets the needs
     async for sensor in SensorsRepository().filter():
         logger.info(f"Best baseline seelction for {sensor.name}...")
-        error_message = (
+        ERROR_MESSAGE_TSD_NOT_FOUND = (
             "The initial baseline selection is possible "
             "only in case time series data exists in the database. "
             f"Sensor: {sensor.name}"
@@ -310,11 +310,12 @@ async def _select_best_baseline():
                 order_by_desc=True,
             )
         except NotFoundError:
-            logger.error(error_message)
+            logger.error(ERROR_MESSAGE_TSD_NOT_FOUND)
 
             await create_system_event(
                 system.EventUncommited(
-                    type=system.EventType.ALERT_CRITICAL, message=error_message
+                    type=system.EventType.ALERT_CRITICAL,
+                    message=ERROR_MESSAGE_TSD_NOT_FOUND,
                 )
             )
 
@@ -326,10 +327,10 @@ async def _select_best_baseline():
             ] = await services.baselines.clean_concentrations(
                 concentrations=np.array([tsd.ppmv async for tsd in tsd_set])
             )
-        except UnprocessableError:
+        except UnprocessableError as error:
             await create_system_event(
                 system.EventUncommited(
-                    type=system.EventType.ALERT_CRITICAL, message=error_message
+                    type=system.EventType.ALERT_CRITICAL, message=str(error)
                 )
             )
 

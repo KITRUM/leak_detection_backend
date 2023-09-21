@@ -23,7 +23,7 @@ __all__ = (
     "SensorsTable",
     "TimeSeriesDataTable",
     "AnomalyDetectionsTable",
-    "SimulationDetectionRatesTable",
+    "SimulationDetectionsTable",
     "EstimationsSummariesTable",
     "SensorsEventsTable",
     "SystemEventsTable",
@@ -222,8 +222,8 @@ class AnomalyDetectionsTable(Base):
         back_populates="anomaly_detection",
     )
 
-    simulation_detection_rates = relationship(
-        "SimulationDetectionRatesTable",
+    simulation_detections = relationship(
+        "SimulationDetectionsTable",
         uselist=True,
         back_populates="anomaly_detection",
     )
@@ -232,14 +232,13 @@ class AnomalyDetectionsTable(Base):
         return f"{self.value} | {self.interactive_feedback_mode}"
 
 
-class SimulationDetectionRatesTable(Base):
-    __tablename__ = "simulation_detection_rates"
+class SimulationDetectionsTable(Base):
+    __tablename__ = "simulation_detections"
 
     leakage: dict = Column(JSON, nullable=False)  # type: ignore[var-annotated]
     concentrations: str = Column(
         String, nullable=False
     )  # type: ignore[var-annotated]
-    rate: float = Column(Float, nullable=False)  # type: ignore[var-annotated]
 
     anomaly_detection_id: int = Column(
         ForeignKey(AnomalyDetectionsTable.id),
@@ -249,7 +248,7 @@ class SimulationDetectionRatesTable(Base):
     anomaly_detection = relationship(
         "AnomalyDetectionsTable",
         uselist=False,
-        back_populates="simulation_detection_rates",
+        back_populates="simulation_detections",
     )
 
     def __str__(self) -> str:
@@ -263,7 +262,7 @@ class EstimationsSummariesTable(Base):
     confidence: float = Column(
         Float, nullable=False
     )  # type: ignore[var-annotated]
-    simulation_detection_rate_ids: str = Column(
+    simulation_detections_ids: str = Column(
         String, nullable=False
     )  # type: ignore[var-annotated]
 

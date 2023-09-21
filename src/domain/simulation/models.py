@@ -2,16 +2,14 @@ import numpy as np
 from numpy.typing import NDArray
 
 from src.domain.anomaly_detection import AnomalyDetectionFlat
-from src.domain.sensors import Sensor
-from src.infrastructure.database.tables import SimulationDetectionRatesTable
+from src.infrastructure.database import SimulationDetectionsTable
 from src.infrastructure.models import InternalModel
 
 __all__ = (
     "CartesianCoordinates",
     "Leakage",
+    "DetectionUncommited",
     "Detection",
-    "SimulationDetectionRateUncommited",
-    "SimulationDetectionRateFlat",
 )
 
 
@@ -49,43 +47,26 @@ class Leakage(InternalModel):
         )
 
 
-class Detection(InternalModel):
+class DetectionUncommited(InternalModel):
     """Represents the simulation's detection payload."""
-
-    sensor: Sensor
-    leakage: Leakage
-    concentrations: NDArray[np.float64]
-
-
-class SimulationDetectionRateUncommited(InternalModel):
-    """This model represents the payload for
-    the detection rate database creation payload.
-    """
 
     anomaly_detection_id: int
     leakage: dict
-    rate: float
     # HACK: Since SQLite does not support arrays
     #       the string convestion is used
     concentrations: str
 
 
-class SimulationDetectionRateFlat(InternalModel):
-    """This model represents the detection rate database representation.
-    It uses optimized numpy data types, leakage representation
-    and nested anomaly detection model.
-    """
+class Detection(InternalModel):
+    """This model represents the detection database representation."""
 
-    id: int
     anomaly_detection: AnomalyDetectionFlat
     leakage: Leakage
-    rate: np.float64
     concentrations: NDArray[np.float64]
+    id: int
 
     @classmethod
-    def from_orm(
-        cls, schema: SimulationDetectionRatesTable
-    ) -> "SimulationDetectionRateFlat":
+    def from_orm(cls, schema: SimulationDetectionsTable) -> "Detection":
         """Convert ORM schema representation into the internal model."""
 
         return cls(
@@ -104,5 +85,4 @@ class SimulationDetectionRateFlat(InternalModel):
             concentrations=np.array(
                 schema.concentrations.split(","), dtype=np.float64
             ),
-            rate=np.float64(schema.rate),
         )

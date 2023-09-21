@@ -121,6 +121,20 @@ class BaseRepository(Session, Generic[ConcreteTable]):  # type: ignore
         except self._ERRORS:
             raise DatabaseError
 
+    async def _save_bulk(
+        self, schemas: list[ConcreteTable]
+    ) -> list[ConcreteTable]:
+        try:
+            self._session.add_all(schemas)
+            await self._session.flush()
+
+            for schema in schemas:
+                await self._session.refresh(schema)
+
+            return schemas
+        except self._ERRORS:
+            raise DatabaseError
+
     async def _all(self) -> AsyncGenerator[ConcreteTable, None]:
         result: Result = await self.execute(select(self.schema_class))
         schemas = result.scalars().all()

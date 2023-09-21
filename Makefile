@@ -2,10 +2,6 @@
 .PHONY: lock
 lock:
 	pip-compile requirements.in -o requirements.txt
-
-
-.PHONY: lock_dev
-lock_dev:
 	pip-compile requirements.dev.in -o requirements.dev.txt
 
 
@@ -22,20 +18,20 @@ run:
 
 # code quality
 
-# alias of cq is code quality
-.PHONY: cq
-cq:
+# fix formatting / and order imports
+.PHONY: fix
+fix:
 	python -m black ./
-	python -m ruff ./
 	python -m isort ./
 
 
+# check type annotations
 .PHONY: types
 types:
 	python -m mypy --check-untyped-defs ./
 
 
-
+# check everything
 .PHONY: check
 check:
 	python -m ruff ./
@@ -44,6 +40,9 @@ check:
 	python -m mypy --check-untyped-defs ./
 
 
+
+
+# just a tool for frontend team
 .PHONY: frontend
 frontend:
 	alembic upgrade head
