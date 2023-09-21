@@ -22,30 +22,13 @@ from src.domain.estimation import (
     services,
 )
 from src.domain.fields import Field, TagInfo
-from src.domain.simulation import SimulationDetectionRateFlat
+from src.domain.simulation import Detection
 from src.domain.templates import TemplatesRepository
 from src.domain.tsd import Tsd, TsdFlat
 from src.domain.tsd.repository import TsdRepository
 from src.infrastructure.database import transaction
 
 __all__ = ("process",)
-
-
-@transaction
-async def create(schema: EstimationSummaryUncommited) -> EstimationSummary:
-    return await EstimationsSummariesRepository().create(schema)
-
-
-@transaction
-async def get_historical_data(sensor_id: int) -> list[EstimationSummary]:
-    """Get the historical data."""
-
-    return [
-        instance
-        async for instance in EstimationsSummariesRepository().by_sensor(
-            sensor_id
-        )
-    ]
 
 
 class DeprecatedEstimationProcessor:
@@ -63,15 +46,13 @@ class DeprecatedEstimationProcessor:
         anomaly_severity: AnomalyDeviation,
         anomaly_concentrations: NDArray[np.float64],
         anomaly_timestamps: list[str],
-        detection_rates: list[SimulationDetectionRateFlat],
+        detections: list[Detection],
         simulator_concentrations: NDArray,
         sensor_number: int,
     ) -> None:
-        self._detection_rates_ids: list[int] = [
-            rate.id for rate in detection_rates
-        ]
+        self._detection_rates_ids: list[int] = [rate.id for rate in detections]
         self.detection_rates: NDArray = np.array(
-            [rate.concentrations for rate in detection_rates]
+            [rate.concentrations for rate in detections]
         )
         self.simulator_concentrations: NDArray = simulator_concentrations
 
@@ -226,65 +207,20 @@ def log_estimation(
         )
 
 
-async def process():
-    """Consume simulation detection rates from data lake
-    and run the estimation. The results are saved to the database
-    and data lake for consuming by websockets.
-    """
-
-    # If the simulation is turned off there is no reason to proceed
-    if not settings.simulation.turn_on:
-        return
-
-    if settings.debug is False:
-        raise NotImplementedError(
-            "Currently the simulation is not working with real data"
-        )
-
-    # NOTE: Since, we do not wanna abuse the database it is better to add the
-    #       field enclosed variable for all items in the loop
-    field: Field | None = None
-
-    simulation_detection_rates = data_lake.simulation_detection_rates  # alias
-
-    logger.success("Background estimation processing")
-
-    # -------------------------------------------------------------------------
-    # Consume and process simulations for the estimation
-    # -------------------------------------------------------------------------
-    async for detection_rates in simulation_detection_rates.consume():
-        logger.debug(f"Estimation processing for {detection_rates}")
-
-        try:
-            await _process(detection_rates=detection_rates, field=field)
-        except IndexError:
-            # If there is no detection_rates in consumed instance
-            # just skip this one
-            logger.error(
-                "Simulation consumed instance does have have any items"
-            )
-            continue
-        except Exception as error:
-            # NOTE: Currently we do not care about this processor that much,
-            #       so all errors are handled
-            logger.error(error)
-            continue
-
-
 @transaction
-async def _process(
-    detection_rates: list[SimulationDetectionRateFlat],
-    field: Field | None = None,
+async def process(
+    detection_rates: list[Detection], field: Field | None = None
 ):
+    tsd_repository = TsdRepository()
     first_detection_rate = detection_rates[0]
 
-    time_series_data: Tsd = await TsdRepository().get(
+    time_series_data: Tsd = await tsd_repository.get(
         id_=first_detection_rate.anomaly_detection.time_series_data_id
     )
 
     last_time_series_data: list[TsdFlat] = [
         item
-        async for item in TsdRepository().filter(
+        async for item in tsd_repository.filter(
             sensor_id=time_series_data.sensor.id,
             last_id=time_series_data.id,
             limit=settings.anomaly_detection.window_size,
@@ -331,7 +267,7 @@ async def _process(
             [tsd.ppmv for tsd in last_time_series_data]
         ),
         anomaly_timestamps=anomaly_timestamps,
-        detection_rates=detection_rates,
+        detections=detection_rates,
         simulator_concentrations=np.array(
             [detection.concentrations for detection in detection_rates]
         ),

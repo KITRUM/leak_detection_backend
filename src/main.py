@@ -45,6 +45,7 @@ logger.debug(
     f"{settings.sensors.anomaly_detection.baseline_best_selection_interval}"
     "\nThe sensor's anomaly detection baseline augmentation interval: "
     f"{settings.sensors.anomaly_detection.baseline_augmentation_interval}"
+    f"\nThe simulation state is: {settings.simulation.turn_on}"
     "\n*******************************************************************"
 )
 
@@ -66,30 +67,13 @@ startup_tasks.extend(
             key="processing",
             coro=application.anomaly_detection.process,
         ),
+        # TODO: Move to the separate process
         partial(
             tasks.run,
             namespace="simulation",
             key="processing",
             coro=application.simulation.process,
         ),
-        partial(
-            tasks.run,
-            namespace="estimation",
-            key="processing",
-            coro=application.estimation.process,
-        ),
-        # partial(
-        #     tasks.run,
-        #     namespace="sensors",
-        #     key="select_best_initial_baseline",
-        #     coro=application.sensors.select_best_baseline,
-        # ),
-        # partial(
-        #     tasks.run,
-        #     namespace="sensors",
-        #     key="initial_baseline_augmentation",
-        #     coro=application.sensors.initial_baseline_augmentation,
-        # ),
     ]
 )
 
@@ -105,7 +89,6 @@ app: FastAPI = factory.create(
         presentation.sensors.router,
         presentation.tsd.router,
         presentation.anomaly_detection.router,
-        presentation.estimation.router,
         presentation.events.sensors.router,
         presentation.events.system.router,
     ),

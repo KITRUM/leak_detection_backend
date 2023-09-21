@@ -8,6 +8,7 @@ ipdb~=0.13
 isort~=5.12
 mypy~=1.0
 pre-commit~=3.1
+pudb~=2022.1
 pydantic-factories~=1.17
 pytest-cov~=4.0
 pytest-env~=0.8

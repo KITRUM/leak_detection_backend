@@ -11,7 +11,7 @@ from src.domain.anomaly_detection import AnomalyDetectionRepository
 from src.domain.estimation import EstimationsSummariesRepository
 from src.domain.events.sensors import SensorsEventsRepository
 from src.domain.events.system import SystemEventsRepository
-from src.domain.simulation import SimulationDetectionRatesRepository
+from src.domain.simulation import SimulationDetectionsRepository
 from src.domain.tsd import TsdRepository
 from src.infrastructure.database import transaction
 
@@ -24,7 +24,7 @@ async def reset_the_database():
 
     await AnomalyDetectionRepository().delete_all()
     await TsdRepository().delete_all()
-    await SimulationDetectionRatesRepository().delete_all()
+    await SimulationDetectionsRepository().delete_all()
     await EstimationsSummariesRepository().delete_all()
     await SensorsEventsRepository().delete_all()
     await SystemEventsRepository().delete_all()

@@ -153,7 +153,10 @@ def _give_acceptable_dist(tsd_set: NDArray[np.float64], cut, m):
     #       which raises the error on max()
     if not without_out.size:
         raise UnprocessableError(
-            message="Can not find the acceptable distance"
+            message=(
+                "Can not perform the baseline selection. "
+                "Can not find the acceptable distance"
+            )
         )
 
     return np.max(without_out)

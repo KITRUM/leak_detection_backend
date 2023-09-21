@@ -57,3 +57,6 @@ class EstimationSummary(_EstimationSummaryBase):
     @validator("confidence", pre=True)
     def convert_numpy_types(cls, value: float) -> np.float64:
         return np.float64(value)
+
+    def __str__(self) -> str:
+        return f"[id={self.id}] result: {self.result}."
