@@ -44,7 +44,7 @@ class LoggingSettings(BaseModel):
     file: str = "franatech"
 
     # The .log file Rotation
-    rotation: str = "1MB"
+    rotation: str = "10MB"
 
     # The type of compression
     compression: str = "zip"

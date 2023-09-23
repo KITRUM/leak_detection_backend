@@ -33,7 +33,8 @@ exclude = [
     "Makefile",
     "migrations",
     "plume2d.py",
-    "src/application/estimation/core.py"
+    "src/application/simulation/estimation.py",
+    "src/domain/estimation/services/correlation.py"
 ]
 
 
@@ -103,7 +104,8 @@ omit = [
 
 [tool.mypy]
 plugins = [
-    "pydantic.mypy"
+    "pydantic.mypy",
+    "numpy.typing.mypy_plugin"
 ]
 python_version = '3.11'
 files = ['*.py',]

@@ -26,10 +26,10 @@ class AnomalyDetectionsAdminView(ModelView, model=AnomalyDetectionsTable):
         "time_series_data",
     )
     column_details_exclude_list = (
-        "simulation_detection_rates",
+        "simulation_detections",
         "time_series_data",
     )
     form_excluded_columns = (
-        "simulation_detection_rates",
+        "simulation_detections",
         "time_series_data",
     )

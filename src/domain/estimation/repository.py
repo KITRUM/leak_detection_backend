@@ -39,18 +39,11 @@ class EstimationsSummariesRepository(
     ) -> EstimationSummary:
         """Create a new record in database."""
 
-        rate_ids_as_string = ",".join(
-            (str(el) for el in schema.simulation_detection_rate_ids)
-        )
-        payload = schema.dict() | {
-            "simulation_detection_rate_ids": rate_ids_as_string
-        }
-
         _schema: EstimationsSummariesTable = await self._save(
-            self.schema_class(**payload)
+            self.schema_class(**schema.dict())
         )
 
-        return await self.get(id_=_schema.id)
+        return EstimationSummary.from_orm(_schema)
 
     async def by_sensor(
         self, sensor_id: int

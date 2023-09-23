@@ -1,4 +1,6 @@
+from contextlib import asynccontextmanager
 from functools import wraps
+from typing import AsyncGenerator
 
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, PendingRollbackError
@@ -10,7 +12,7 @@ from src.infrastructure.database.services.session import (
 )
 from src.infrastructure.errors import DatabaseError
 
-__all__ = ("transaction",)
+__all__ = ("transaction", "transaction_context")
 
 
 # TODO: think about making @transaction works with async generators
@@ -37,7 +39,7 @@ def transaction(coro):
             #       If the DatabseError is handled within domain/application
             #       levels it is possible that `await session.commit()`
             #       would raise an error.
-            logger.error(f"Rolling back changes.\n{error}")
+            logger.error(f"Rolling back changes. {error}")
             await session.rollback()
             raise DatabaseError
         except (IntegrityError, PendingRollbackError) as error:
@@ -49,3 +51,22 @@ def transaction(coro):
             await session.close()
 
     return inner
+
+
+@asynccontextmanager
+async def transaction_context() -> AsyncGenerator[AsyncSession, None]:
+    session: AsyncSession = get_session()
+    CTX_SESSION.set(session)
+
+    try:
+        yield session
+        await session.commit()
+    except DatabaseError as error:
+        logger.error(f"Rolling back changes. {error}")
+        await session.rollback()
+        raise DatabaseError
+    except (IntegrityError, PendingRollbackError) as error:
+        logger.error(f"Rolling back changes.\n{error}")
+        await session.rollback()
+    finally:
+        await session.close()
