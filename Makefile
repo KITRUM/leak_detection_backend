@@ -5,6 +5,17 @@ lock:
 	pip-compile requirements.dev.in -o requirements.dev.txt
 
 
+# install dependencies
+.PHONY: install
+install:
+	pip install -r requirements.txt
+
+
+# install dev dependencies
+.PHONY: dinstall
+dinstall:
+	pip install -r requirements.dev.txt
+
 
 
 

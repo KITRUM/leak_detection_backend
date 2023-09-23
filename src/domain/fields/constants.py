@@ -9,14 +9,6 @@ __all__ = ("Field",)
 
 
 def _trestakk_template_sensor_keys(payload: str) -> TagInfo:
-    """
-    Return: tuple[
-        int: the template number,
-        str: the template name,
-        int: sensor number(filename numbers after the prefix)
-    ]
-    """
-
     identifier = payload.strip()[0:2]
 
     if int(identifier[1]) < 5:
@@ -34,14 +26,6 @@ def _trestakk_template_sensor_keys(payload: str) -> TagInfo:
 
 
 def _snorre_template_sensor_keys(sensor_name: str) -> TagInfo:
-    """
-    Return: tuple[
-        int: the template number,
-        str: the template name,
-        int: sensor number(filename numbers after the prefix)
-    ]
-    """
-
     template_identifiers = {2: "M", 3: "N", 4: "V", 5: "W", 6: "X", 7: "Z"}
     identifier = sensor_name.strip()[0:2]
     template_identifier = int(identifier[0])

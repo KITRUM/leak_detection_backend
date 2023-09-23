@@ -529,7 +529,7 @@ class SimulationPlume2D:
         plume_data: Plume | None = None,
         verbose: bool = False,
         z_0: np.float64 = np.float64(1.4),
-        U_b: np.float64 = np.float64(0.05),
+        U_b: np.float64 = np.float64(0.00),
     ):
         self._opt_d = True
         self._opt_sep = True
@@ -590,7 +590,14 @@ class SimulationPlume2D:
         )
         return outstring
 
-    def run(self, runtime=300.0, steps=-1, output_interval=-1, timedelta=None):
+    def run(
+        self,
+        runtime=300.0,
+        steps=-1,
+        output_interval=-1,
+        timedelta=None,
+        compute_weber=False,
+    ):
         self._t_max = runtime
         if timedelta is None:
             assert steps > 0
@@ -608,7 +615,7 @@ class SimulationPlume2D:
         )
 
         self._plume_data.compute_d_out(
-            self._env_param.IFT_g, compute_weber=True
+            self._env_param.IFT_g, compute_weber=compute_weber
         )
         if self._verbose:
             print("== Plume after computing d_out ==")
@@ -1306,14 +1313,14 @@ def get_concentration_sensor(
     S = (sensor.x, sensor.y, sensor.z)  # units m
     L = (leakage.x, leakage.y, leakage.z)
     template_angle = sensor.template.angle_from_north
-    steps = runtime * 3
+    steps = runtime * 5
 
     _, _, z_l = L
     # change the origin to L
     S_ = copy.deepcopy(S)
     L_ = copy.deepcopy(L)
     S_ = trans(L_, S_)
-    L_ = trans(L_, S_)
+    L_ = trans(L_, L_)
     # align the x coordimnate with direction of the current:
     angle = template_angle + math.pi / 2 - alpha_i
     S_ = rotate(S_, angle)
@@ -1353,9 +1360,9 @@ def get_concentration_sensor(
 
 def apply_time_constant(curve, tau=60, delta_t=10) -> NDArray[np.float64]:
     """The function to smooth the concentration values taking
-    into account sensor behaviour tau - time constant representing delay
-    in the sensor response to the real signal delta_t - the distance
-    between measurements, by default 10 min.
+    into account sensor behaviour. tau - time constant representing delay
+    in the sensor response to the real signal; delta_t - the distance
+    between measurements, by default for our system 10 min.
     """
 
     alpha = 0.5 * delta_t / tau
@@ -1404,8 +1411,8 @@ def simulate(
     anomaly_detection: AnomalyDetection,
     leakage: Leakage,
     currents: list[Current],
-    runtime=300,
-    tau=60,
+    runtime: int,
+    tau: int,
 ) -> DetectionUncommited:
     # transformed_coordinates: CartesianCoordinates = (
     #    get_sensor_transformed_coordinates(sensor, leakage, current)
@@ -1422,7 +1429,6 @@ def simulate(
         )
         for current in currents
     ]
-    print(f"Concentrations: {len(concentrations)}")
 
     concentrations_response = apply_time_constant(concentrations, tau=tau)
 

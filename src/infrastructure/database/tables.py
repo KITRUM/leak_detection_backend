@@ -250,6 +250,11 @@ class SimulationDetectionsTable(Base):
         uselist=False,
         back_populates="simulation_detections",
     )
+    estimation = relationship(
+        "EstimationsSummariesTable",
+        uselist=False,
+        back_populates="detection",
+    )
 
     def __str__(self) -> str:
         return str(self.rate)
@@ -259,17 +264,18 @@ class EstimationsSummariesTable(Base):
     __tablename__ = "estimations_summaries"
 
     result: str = Column(String, nullable=False)  # type: ignore[var-annotated]
-    confidence: float = Column(
-        Float, nullable=False
+    detection_id: int = Column(
+        ForeignKey(SimulationDetectionsTable.id, ondelete="RESTRICT"),
+        nullable=True,
+        default=None,
     )  # type: ignore[var-annotated]
-    simulation_detections_ids: str = Column(
-        String, nullable=False
-    )  # type: ignore[var-annotated]
-
     sensor_id: int = Column(
         ForeignKey(SensorsTable.id, ondelete="RESTRICT"),
     )  # type: ignore[var-annotated]
 
+    detection = relationship(
+        "SimulationDetectionsTable", uselist=False, back_populates="estimation"
+    )
     sensor = relationship(
         "SensorsTable", uselist=False, back_populates="estimation_summary_set"
     )

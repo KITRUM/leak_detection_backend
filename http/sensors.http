@@ -3,7 +3,7 @@ POST {{HTTP__BASE_URL}}/templates/1/sensors
 Content-Type: application/json
 
 {
-    "name": "snorre_demo",
+    "name": "19H-QI___5472",
     "x": 1.0,
     "y": 1.0,
     "z": 1.0 
@@ -32,8 +32,9 @@ Content-Type: application/json
 
 {
 
-    "x": 2,
-    "y": 3
+    "x": -4.9,
+    "y": -5.3,
+    "z": 4.1
 
 }
 
