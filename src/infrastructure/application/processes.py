@@ -4,17 +4,15 @@ processes interaction interface.
 """
 
 import asyncio
-from multiprocessing import Process
+from threading import Thread
 from typing import Any, Callable, Coroutine
 
 from loguru import logger
 
 from src.infrastructure.errors import ProcessErorr
 
-_PROCESSES: dict[str, Process] = {}
+_PROCESSES: dict[str, Thread] = {}
 
-# WARNING: Processes are replaced with threads because of the
-#          problems with the shared memory between processes.
 
 # TODO: Get back to the processes after data lake is an external service
 
@@ -25,7 +23,7 @@ def _build_key(namespace: str, key: Any) -> str:
     return f"{namespace}_{str(key)}"
 
 
-def get(namespace: str, key: Any) -> Process:
+def get(namespace: str, key: Any) -> Thread:
     """Get the process from the register if exist."""
 
     _key = _build_key(namespace, key)
@@ -38,14 +36,14 @@ def get(namespace: str, key: Any) -> Process:
 def cancel(namespace: str, key: Any) -> None:
     """Cancel the process base on the namespace and key."""
 
-    process: Process = get(namespace, key)
-    process.terminate()
-    _key = _build_key(namespace, key)
-    del _PROCESSES[_key]
-    logger.success(f"The process {_key} is terminated")
+    # process: Process = get(namespace, key)
+    # process.terminate()
+    # _key = _build_key(namespace, key)
+    # del _PROCESSES[_key]
+    # logger.success(f"The process {_key} is terminated")
 
     # NOTE: Only for threads
-    # raise NotImplementedError
+    raise NotImplementedError
 
 
 def _run_coro(coro_func: Callable[..., Coroutine], *args, **kwargs) -> None:
@@ -61,7 +59,7 @@ def run(
     key: Any,
     callback: Callable | Callable[..., Coroutine],
     **kwargs: Any,
-) -> Process:
+) -> Thread:
     """Run the process and register it for future management.
     If the callback is a coroutine, it will be run in a event loop.
     """
@@ -70,16 +68,16 @@ def run(
         raise ProcessErorr(message=f"Process {_key} already exist")
 
     if asyncio.iscoroutinefunction(callback):
-        process: Process = Process(
+        thread = Thread(
             target=_run_coro, args=(callback,), kwargs=kwargs, daemon=True
         )
-        process.start()
+        thread.start()
     else:
-        process = Process(target=callback, kwargs=kwargs, daemon=True)
-        process.start()
+        thread = Thread(target=callback, kwargs=kwargs, daemon=True)
+        thread.start()
 
-    _PROCESSES[_key] = process
+    _PROCESSES[_key] = thread
 
     logger.debug(f"Background process: {_key}")
 
-    return process
+    return thread
