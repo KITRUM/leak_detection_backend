@@ -1417,7 +1417,8 @@ def simulate(
     # transformed_coordinates: CartesianCoordinates = (
     #    get_sensor_transformed_coordinates(sensor, leakage, current)
     # )
-
+    tsd_id = anomaly_detection.time_series_data.id
+    currents_relevant = currents[(tsd_id - 143) : tsd_id+1]
     concentrations = [
         get_concentration_sensor(
             current=current,
@@ -1427,7 +1428,7 @@ def simulate(
             output_interval=1,
             verbose=False,
         )
-        for current in currents
+        for current in currents_relevant
     ]
 
     concentrations_response = apply_time_constant(concentrations, tau=tau)

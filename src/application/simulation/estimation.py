@@ -318,7 +318,6 @@ class EstimationProcessor:
     def __init__(
         self,
         detections: list[Detection],
-        tsd_id: int,
         anomaly_severity: AnomalyDeviation,
         anomaly_concentrations: NDArray[np.float64],
         # collection of sensor signals from the rest of the sensors of the template
@@ -376,7 +375,7 @@ class EstimationProcessor:
             reference=reference,
             hypotheses=hypotheses,
             weight_dtw=0.9,
-            threshold=1.4,
+            threshold=1.5,
             max_lag=12,
             beta=0.0001,
             verbose=False,
