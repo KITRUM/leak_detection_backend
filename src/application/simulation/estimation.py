@@ -2,7 +2,7 @@
 The purpose of this module is estimate the leakage by
 simulation processing results.
 
-P.S. this module is not proofed yet...
+P.S. this module is not prooved yet...
 """
 
 import copy
@@ -50,7 +50,7 @@ class MultiMetricCorrelation:
         """
 
         # Parameters:
-        self._x: NDArray[np.float64] = reference
+        self._x: NDArray[np.float64] = np.flip(reference)
         self._y: NDArray[np.float64] = hypotheses
 
         # TODO: 💩 left some shitty code
@@ -128,7 +128,12 @@ class MultiMetricCorrelation:
             norm_factor = np.sqrt(
                 np.sum(reference**2) * np.sum(hypothesis**2)
             )
-            normalized_correlation = correlation / norm_factor
+
+            normalized_correlation: np.float64 = (
+                np.float64(0.1)
+                if norm_factor < 10 ** (-6)
+                else correlation / norm_factor
+            )
 
             # Apply penalty based on lag value
             lags = np.arange(-valid_range, len(hypothesis))
@@ -256,7 +261,6 @@ class MultiMetricCorrelation:
             0
         ]
 
-        # BUG: ValueError: zero-size array to reduction operation maximum which has no identity
         self.dtw_best_score = np.max(self.dtw_inv_z_scores)
 
         weighted_sum = (
@@ -314,6 +318,7 @@ class EstimationProcessor:
     def __init__(
         self,
         detections: list[Detection],
+        tsd_id: int,
         anomaly_severity: AnomalyDeviation,
         anomaly_concentrations: NDArray[np.float64],
         # collection of sensor signals from the rest of the sensors of the template
@@ -325,16 +330,6 @@ class EstimationProcessor:
         self._concentrations: NDArray = np.array(
             [detection.concentrations for detection in self._detections]
         )
-
-        # =============================================== #
-        # Comment C.Kehl: remember that 'detection_rates' #
-        # has one more entry of 'sensor_i' (dim 1) than   #
-        # 'simulator_concentrations'. That one more entry #
-        # is the entry of the 'average detection rate of  #
-        # all sensors for that leak'. Hence:              #
-        # self.detection_rates.shape[1] =                 #
-        # self.simulator_concentrations.shape[1] + 1      #
-        # =============================================== #
 
         self.nleaks = self._concentrations.shape[0]
         self.nsensors = 1  # - Weird Here we should receive the number of working sensor for current event at the current template
@@ -369,8 +364,8 @@ class EstimationProcessor:
             len(self.sensor_concentrations),
             self._concentrations.shape[1],
         )
-        reference = self.sensor_concentrations[1 : (maxlen - 1)]
-        hypotheses = np.squeeze(self._concentrations[:, :maxlen])
+        reference = self.sensor_concentrations[1:maxlen]
+        hypotheses = self._concentrations[:, : (maxlen - 1)]
 
         # TODO: Replace neighbor_sensors with real data
 
@@ -380,7 +375,7 @@ class EstimationProcessor:
             neighbor_sensors=[],
             reference=reference,
             hypotheses=hypotheses,
-            weight_dtw=0.99,
+            weight_dtw=0.9,
             threshold=1.4,
             max_lag=12,
             beta=0.0001,
@@ -414,6 +409,10 @@ class EstimationProcessor:
         logger.debug(
             f"Intermidiate correlation results: {corr_output.leak_index_mat}"
         )
+        logger.debug(f"dtw distances: {corr_output.dtw_values}")
+        logger.debug(f"dtw scores: {corr_output.dtw_inv_z_scores}")
+        logger.debug(f"crosscorr values: {corr_output.crosscorr_values}")
+        logger.debug(f"crosscorr scores: {corr_output.crosscorr_z_scores}")
         logger.debug(f"Final correlation scores: {corr_output.final_z_scores}")
 
         # NOTE: Currently the estimation could return next results:
@@ -464,12 +463,12 @@ def log_estimation(
     elif estimation_summary.result == EstimationResult.CONFIRMED:
         logger.debug(
             "Detected leak for anomaly at "
-            f"{anomaly_timestamps[-1]} of sensor {tag_info.sensor_number} "  # noqa
-            f"at leak position {estimation_summary.detection_id} "  # noqa
+            f"{anomaly_timestamps[-1]} of sensor {tag_info.sensor_number} "
+            f"at leak position {estimation_summary.detection_id} "
             f"(Result: {estimation_summary.result})."
         )
-    else:  # LeakResponseType.LEAK_ABSENT
+    else:  # LeakResponseType.UNDEFINED
         logger.debug(
-            "Elevated gas levels at sensor "
-            f"{tag_info.sensor_number} are not crucial."  # noqa
+            "The methane elevation cause of the sensor "
+            f"{tag_info.sensor_number} is undefined."
         )
