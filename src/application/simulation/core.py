@@ -8,6 +8,7 @@ from loguru import logger
 
 from src.application.data_lake import data_lake
 from src.config import settings
+from src.domain import events
 from src.domain.anomaly_detection import AnomalyDetection
 from src.domain.currents import Current
 from src.domain.currents import services as currents_services
@@ -17,6 +18,7 @@ from src.domain.estimation import (
     EstimationSummary,
     EstimationSummaryUncommited,
 )
+from src.domain.estimation.models import EstimationResult
 from src.domain.fields import Field, TagInfo
 from src.domain.sensors import Sensor, SensorsRepository
 from src.domain.simulation import (
@@ -30,6 +32,7 @@ from src.domain.simulation import services as simulation_services
 from src.domain.templates import TemplatesRepository
 from src.domain.tsd import Tsd, TsdFlat, TsdRepository
 from src.infrastructure.database import transaction_context
+from src.infrastructure.errors.base import UnprocessableError
 from src.infrastructure.physics import constants
 
 from . import plume2d
@@ -129,7 +132,9 @@ async def process():
         #       if the estimation gives you the confirmation or not.
         #       We have to move back to the multiprocessing, but also
         #       it makes sense only after the notification system
-        #       will be externalized.
+        #       will be externalized. Also this operation runs only
+        #       once per 10 minutes or so, so it is not a big deal
+        #       to run it in the main thread as well for now.
         # processes.run(
         #     namespace="simulation",
         #     key=f"process-{anomaly_detection.id}",
@@ -153,6 +158,12 @@ async def process():
                 f"Estimation for {anomaly_detection.id} is done. "
                 f"Estimation summary id: {estimation_summary.id}"
             )
+
+            event: events.system.Event = await _create_event(
+                estimation_summary
+            )
+
+        data_lake.events_system.storage.append(event)
 
 
 async def _process(
@@ -279,3 +290,60 @@ async def _process(
     )
 
     return estimation_summary
+
+
+async def _create_event(
+    estimation_summary: EstimationSummary,
+) -> events.system.Event:
+    """Just a dispatcher for the event creation."""
+
+    match estimation_summary.result:
+        case EstimationResult.CONFIRMED:
+            assert (
+                estimation_summary.detection_id is not None
+            ), "For some reasone the detection id is None"
+
+            detection: Detection = await SimulationDetectionsRepository().get(
+                id_=estimation_summary.detection_id
+            )
+
+            return await events.system.SystemEventsRepository().create(
+                schema=events.system.EventUncommited(
+                    type=events.system.EventType.ALERT_CRITICAL,
+                    message=(
+                        "The estimation is finished. "
+                        f"[{EstimationResult.CONFIRMED}]\n"
+                        f"The leakage is {detection.leakage}"
+                    ),
+                )
+            )
+        case EstimationResult.EXTERNAL_CAUSE:
+            assert (
+                estimation_summary.detection_id is not None
+            ), "For some reasone the detection id is None"
+
+            detection = await SimulationDetectionsRepository().get(
+                id_=estimation_summary.detection_id
+            )
+            return await events.system.SystemEventsRepository().create(
+                schema=events.system.EventUncommited(
+                    type=events.system.EventType.ALERT_CRITICAL,
+                    message=(
+                        "The estimation is finished. "
+                        f"[{EstimationResult.EXTERNAL_CAUSE}]\n"
+                        f"The leakage is {detection.leakage}"
+                    ),
+                )
+            )
+        case EstimationResult.UNDEFINED:
+            return await events.system.SystemEventsRepository().create(
+                schema=events.system.EventUncommited(
+                    type=events.system.EventType.ALERT_SUCCESS,
+                    message=(
+                        "The estimation is finished. "
+                        f"[{EstimationResult.UNDEFINED}]"
+                    ),
+                )
+            )
+        case _:
+            raise UnprocessableError(message="Unknown estimation result")

@@ -167,7 +167,7 @@ class DeprecatedEstimationProcessor:
             else:
                 return EstimationSummaryUncommited(
                     **{
-                        "result": EstimationResult.ABSENT,
+                        "result": EstimationResult.UNDEFINED,
                         "confidence": float(
                             np.float64(1.0)
                             - np.float64(corr1.range_check())  # type: ignore

@@ -16,7 +16,6 @@ class EstimationResult(StrEnum):
     CONFIRMED = auto()
     UNDEFINED = auto()
     EXTERNAL_CAUSE = auto()
-    SENSOR_NOT_AVAILABLE = auto()
 
 
 class EstimationSummaryUncommited(InternalModel):
