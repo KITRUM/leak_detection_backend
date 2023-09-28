@@ -1313,7 +1313,7 @@ def get_concentration_sensor(
     S = (sensor.x, sensor.y, sensor.z)  # units m
     L = (leakage.x, leakage.y, leakage.z)
     template_angle = sensor.template.angle_from_north
-    steps = runtime * 5
+    steps = runtime * 4
 
     _, _, z_l = L
     # change the origin to L
@@ -1418,7 +1418,7 @@ def simulate(
     #    get_sensor_transformed_coordinates(sensor, leakage, current)
     # )
     tsd_id = anomaly_detection.time_series_data.id
-    currents_relevant = currents[(tsd_id - 143) : tsd_id+1]
+    currents_relevant = currents[(tsd_id - 143) : (tsd_id + 1)]
     concentrations = [
         get_concentration_sensor(
             current=current,

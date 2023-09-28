@@ -408,6 +408,7 @@ class EstimationProcessor:
         logger.debug(
             f"Intermidiate correlation results: {corr_output.leak_index_mat}"
         )
+        logger.debug(f"hypothesis: {corr_output._y.shape}")
         logger.debug(f"dtw distances: {corr_output.dtw_values}")
         logger.debug(f"dtw scores: {corr_output.dtw_inv_z_scores}")
         logger.debug(f"crosscorr values: {corr_output.crosscorr_values}")

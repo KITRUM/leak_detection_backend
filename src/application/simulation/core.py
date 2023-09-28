@@ -270,7 +270,6 @@ async def _process(
 
     create_schema: EstimationSummaryUncommited = EstimationProcessor(
         detections=detections,
-        tsd_id=first_detection.anomaly_detection.time_series_data_id,
         anomaly_severity=first_detection.anomaly_detection.value,
         anomaly_concentrations=np.array(
             [tsd.ppmv for tsd in last_time_series_data]
