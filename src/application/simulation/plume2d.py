@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
+from loguru import logger
 
 from src.config import settings
 from src.domain.anomaly_detection import AnomalyDetection
@@ -1312,9 +1313,9 @@ def get_concentration_sensor(
     U_i, alpha_i = current.magnitude, current.angle_from_north
     S = (sensor.x, sensor.y, sensor.z)  # units m
     L = (leakage.x, leakage.y, leakage.z)
-    template_angle = sensor.template.angle_from_north
+    template_angle = (sensor.template.angle_from_north)*math.pi/180
     steps = runtime * 4
-
+    
     _, _, z_l = L
     # change the origin to L
     S_ = copy.deepcopy(S)
@@ -1323,6 +1324,8 @@ def get_concentration_sensor(
     L_ = trans(L_, L_)
     # align the x coordimnate with direction of the current:
     angle = template_angle + math.pi / 2 - alpha_i
+    logger.debug(f"Template angle: {template_angle}")
+    logger.debug(f"Rotation Angle: {angle}")
     S_ = rotate(S_, angle)
 
     sim = SimulationPlume2D(verbose=verbose, z_0=z_l, U_b=U_i)

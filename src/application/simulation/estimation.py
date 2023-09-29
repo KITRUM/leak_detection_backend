@@ -405,6 +405,8 @@ class EstimationProcessor:
         # *********************************************************************
 
         # Log some intermediate results
+        logger.debug(f"Reference: {corr_output._x}")
+        logger.debug(f"Hypothesis: {corr_output._y}")
         logger.debug(
             f"Intermidiate correlation results: {corr_output.leak_index_mat}"
         )
