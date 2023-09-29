@@ -12,7 +12,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        run: pip install pipenv  && pipenv sync --dev --system
+        run: pip install -r requirements.dev.txt
       - name: Run linter
         run: ruff .
       - name: Run formatters
