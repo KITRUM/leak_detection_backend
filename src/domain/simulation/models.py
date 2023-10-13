@@ -33,7 +33,7 @@ class Leakage(InternalModel):
     duration: np.float64  # unit: s
 
     def __str__(self) -> str:
-        return f"{self.name}({self.x},{self.y},{self.z}) [{self.rate}]"
+        return f"{self.name}({self.x},{self.y},{self.z})"
 
     @classmethod
     def from_raw(cls, payload: dict) -> "Leakage":
